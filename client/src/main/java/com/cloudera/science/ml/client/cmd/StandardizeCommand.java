@@ -27,12 +27,11 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.beust.jcommander.converters.CommaParameterSplitter;
-import com.beust.jcommander.converters.IntegerConverter;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.OutputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
 import com.cloudera.science.ml.client.params.SummaryParameters;
-import com.cloudera.science.ml.parallel.normalize.Elements;
+import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.parallel.normalize.Header;
 import com.cloudera.science.ml.parallel.normalize.Standardizer;
 import com.cloudera.science.ml.parallel.normalize.Summary;
@@ -90,7 +89,7 @@ public class StandardizeCommand implements Command {
   @Override
   public int execute(Configuration conf) throws Exception {
     Pipeline p = pipelineParams.create(StandardizeCommand.class, conf);
-    PCollection<Elements> elements = inputParams.getElements(p);
+    PCollection<Record> records = inputParams.getRecords(p);
 
     Summary summary = null;
     Header header = null;
@@ -110,7 +109,7 @@ public class StandardizeCommand implements Command {
         .build();
     
     PType<Vector> vecPType = outputParams.getVectorPType();
-    PCollection<Vector> vecs = standardizer.apply(elements, vecPType);
+    PCollection<Vector> vecs = standardizer.apply(records, vecPType);
     outputParams.write(vecs, outputFile);
     
     PipelineResult pr = p.done();

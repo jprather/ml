@@ -27,6 +27,7 @@ import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.materialize.pobject.PObjectImpl;
 import org.apache.crunch.types.avro.Avros;
 
+import com.cloudera.science.ml.core.records.Record;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -74,7 +75,7 @@ public class Summarizer {
     return this;
   }
 
-  public PObject<Summary> build(PCollection<Elements> input) {
+  public PObject<Summary> build(PCollection<Record> input) {
     return new SummaryPObject(header, input.parallelDo("summarize",
         new SummarizeFn(ignoredColumns, defaultToSymbolic, exceptionColumns),
         Avros.tableOf(Avros.ints(), Avros.pairs(Avros.longs(), Avros.reflects(SummaryStats.class))))
@@ -104,7 +105,7 @@ public class Summarizer {
     }
   }
 
-  private static class SummarizeFn extends DoFn<Elements, Pair<Integer, Pair<Long, SummaryStats>>> {
+  private static class SummarizeFn extends DoFn<Record, Pair<Integer, Pair<Long, SummaryStats>>> {
     private final Set<Integer> ignoredColumns;
     private final boolean defaultToSymbolic;
     private final Set<Integer> exceptionColumns;
@@ -121,10 +122,9 @@ public class Summarizer {
     }
     
     @Override
-    public void process(Elements elements,
+    public void process(Record record,
         Emitter<Pair<Integer, Pair<Long, SummaryStats>>> emitter) {
-      for (Element e : elements) {
-        int idx = e.index();
+      for (int idx = 0; idx < record.getSpec().size(); idx++) {
         if (!ignoredColumns.contains(idx)) {
           SummaryStats ss = stats.get(idx);
           if (ss == null) {
@@ -132,7 +132,11 @@ public class Summarizer {
             stats.put(idx, ss);
           }
           boolean symbolic = exceptionColumns.contains(idx) ? !defaultToSymbolic : defaultToSymbolic;
-          ss.add(e, symbolic);
+          if (symbolic) {
+            ss.addSymbol(record.getAsString(idx));
+          } else {
+            ss.addNumeric(record.getAsDouble(idx));
+          }
         }
       }
       count++;

@@ -16,8 +16,9 @@ package com.cloudera.science.ml.core.records.csv;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
+import com.cloudera.science.ml.core.records.BasicSpec;
+import com.cloudera.science.ml.core.records.DataType;
 import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.core.records.Spec;
 import com.google.common.collect.Lists;
@@ -27,138 +28,101 @@ import com.google.common.collect.Lists;
  */
 public class CSVRecord implements Record {
 
-  private CSVSpec spec;
-  private List<Object> values;
+  private final List<String> values;
   
-  public CSVRecord(CSVSpec spec, Object... values) {
-    this(spec, Arrays.asList(values));
+  public CSVRecord(String... values) {
+    this(Arrays.asList(values));
   }
   
-  public CSVRecord(CSVSpec spec, List<Object> values) {
-    this.spec = spec;
+  public CSVRecord(List<String> values) {
     this.values = values;
   }
   
   @Override
   public Spec getSpec() {
-    return spec;
+    return new BasicSpec(DataType.STRING, values.size());
   }
 
   @Override
   public Record copy(boolean deep) {
     if (!deep) {
-      List<Object> v = Arrays.asList(new Object[values.size()]);
-      return new CSVRecord(spec, v);
+      List<String> v = Arrays.asList(new String[values.size()]);
+      return new CSVRecord(v);
     } else {
-      List<Object> v = Lists.newArrayList(values);
-      return new CSVRecord(spec, v);
+      List<String> v = Lists.newArrayList(values);
+      return new CSVRecord(v);
     }
   }
   
   @Override
-  public Object get(String fieldName) {
-    return values.get(spec.getField(fieldName).position());
-  }
-  
-  @Override
-  public <T> T get(String fieldName, Class<T> typeClass) {
-    return typeClass.cast(get(fieldName));
-  }
-
-  @Override
   public Boolean getBoolean(String fieldName) {
-    return get(fieldName, Boolean.class);
+    return Boolean.valueOf(getString(fieldName));
   }
 
   @Override
   public Double getDouble(String fieldName) {
-    return get(fieldName, Double.class);
+    return Double.valueOf(getString(fieldName));
   }
 
   @Override
   public Integer getInteger(String fieldName) {
-    return get(fieldName, Integer.class);
-  }
-
-  @Override
-  public List<?> getList(String fieldName) {
-    throw new UnsupportedOperationException("CSVRecords do not support lists");
-  }
-
-  @Override
-  public <T> List<T> getList(String fieldName, Class<T> typeClass) {
-    throw new UnsupportedOperationException("CSVRecords do not support lists");
+    return Integer.valueOf(getString(fieldName));
   }
 
   @Override
   public Long getLong(String fieldName) {
-    return get(fieldName, Long.class);
-  }
-
-  @Override
-  public Map<?, ?> getMap(String fieldName) {
-    throw new UnsupportedOperationException("CSVRecords do not support maps");
-  }
-
-  @Override
-  public <K, V> Map<K, V> getMap(String fieldName, Class<K> keyClass, Class<V> valueClass) {
-    throw new UnsupportedOperationException("CSVRecords do not support maps");
+    return Long.valueOf(getString(fieldName));
   }
 
   @Override
   public String getString(String fieldName) {
-    return get(fieldName, String.class);
-  }
-
-  @Override
-  public Record getRecord(String fieldName) {
-    throw new UnsupportedOperationException("CSVRecords do not support nested records");
+    return values.get(getSpec().getField(fieldName).position());
   }
 
   @Override
   public Record set(String fieldName, Object value) {
-    values.set(spec.getField(fieldName).position(), value);
+    values.set(getSpec().getField(fieldName).position(), value.toString());
     return this;
   }
 
   @Override
-  public Record setBoolean(String fieldName, Boolean value) {
-    return set(fieldName, value);
+  public Boolean getBoolean(int index) {
+    return Boolean.valueOf(values.get(index));
   }
 
   @Override
-  public Record setDouble(String fieldName, Double value) {
-    return set(fieldName, value);
+  public Double getDouble(int index) {
+    return Double.valueOf(values.get(index));
   }
 
   @Override
-  public Record setInteger(String fieldName, Integer value) {
-    return set(fieldName, value);
+  public Integer getInteger(int index) {
+    return Integer.valueOf(values.get(index));
   }
 
   @Override
-  public Record setList(String fieldName, List<?> value) {
-    throw new UnsupportedOperationException("CSVRecords do not support maps");
+  public Long getLong(int index) {
+    return Long.valueOf(values.get(index));
   }
 
   @Override
-  public Record setLong(String fieldName, Long value) {
-    return set(fieldName, value);
+  public String getString(int index) {
+    return values.get(index);
   }
 
   @Override
-  public Record setMap(String fieldName, Map<?, ?> value) {
-    throw new UnsupportedOperationException("CSVRecords do not support maps");
+  public Record set(int index, Object value) {
+    values.set(index, value.toString());
+    return this;
   }
 
   @Override
-  public Record setString(String fieldName, String value) {
-    return set(fieldName, value);
+  public String getAsString(int index) {
+    return values.get(index);
   }
 
   @Override
-  public Record setRecord(String fieldName, Record value) {
-    throw new UnsupportedOperationException("CSVRecords do not support records");
+  public double getAsDouble(int index) {
+    return Double.valueOf(values.get(index));
   }
-
 }

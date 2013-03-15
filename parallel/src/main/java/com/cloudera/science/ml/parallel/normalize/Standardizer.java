@@ -28,6 +28,8 @@ import org.apache.crunch.types.PType;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 
+import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.vectors.Vectors;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -110,34 +112,34 @@ public class Standardizer implements Serializable {
     this.expansion = -ignoredColumns.size() + (idColumn >= 0 ? -1 :  0) + summary.getNetLevels();
   }
   
-  public <V extends Vector> PCollection<V> apply(PCollection<Elements> elems, PType<V> ptype) {
-    return elems.parallelDo("standardize", new StandardizeFn<V>(), ptype);
+  public <V extends Vector> PCollection<V> apply(PCollection<Record> records, PType<V> ptype) {
+    return records.parallelDo("standardize", new StandardizeFn<V>(), ptype);
   }
   
-  private class StandardizeFn<V extends Vector> extends MapFn<Elements, V> {
+  private class StandardizeFn<V extends Vector> extends MapFn<Record, V> {
     @Override
-    public V map(Elements elements) {
-      double[] values = new double[elements.size() + expansion];
+    public V map(Record record) {
+      double[] values = new double[record.getSpec().size() + expansion];
       int offset = 0;
-      for (int i = 0; i < elements.size(); i++) {
+      for (int i = 0; i < record.getSpec().size(); i++) {
         if (idColumn != i && !ignoredColumns.contains(i)) {
-          Element e = elements.get(i);
           SummaryStats ss = summary.getStats(i);
           if (ss == null) {
-            values[offset] = e.getNumeric();
+            values[offset] = record.getAsDouble(i);
             offset++;
           } else if (ss.isNumeric()) {
             Transform t = defaultTransform;
             if (transforms.containsKey(i)) {
               t = transforms.get(i);
             }
-            values[offset] = t.apply(e.getNumeric(), summary.getRecordCount(), ss);
+            double n = record.getAsDouble(i);
+            values[offset] = t.apply(n, summary.getRecordCount(), ss);
             offset++;
           } else {
-            int index = ss.index(e.getSymbolic());
+            int index = ss.index(record.getAsString(i));
             if (index < 0) {
               LOG.error(String.format("Unknown value encountered for field %d: '%s'",
-                  i, e.getSymbolic()));
+                  i, record.getAsString(i)));
             } else {
               values[offset + index] = 1.0;
             }
@@ -145,9 +147,17 @@ public class Standardizer implements Serializable {
           }
         }
       }
-      Vector v = elements.asVector(values, sparse);
+      
+      Vector v = null;
+      if (sparse) {
+        //TODO Handle named vector?
+        v = Vectors.sparse(values.length);
+      } else {
+        v = Vectors.dense(values.length);
+      }
+      v.assign(values);
       if (idColumn >= 0) {
-        v = new NamedVector(v, elements.get(idColumn).getSymbolic());
+        v = new NamedVector(v, record.getAsString(idColumn));
       }
       return (V) v;
     }

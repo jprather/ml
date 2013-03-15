@@ -14,32 +14,33 @@
  */
 package com.cloudera.science.ml.parallel.normalize;
 
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
 
-import com.google.common.collect.Lists;
+import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.csv.CSVRecord;
+import com.cloudera.science.ml.parallel.types.MLRecords;
 
 /**
  *
  */
-public class StringSplitFn extends DoFn<String, Elements> {
+public class StringSplitFn extends DoFn<String, Record> {
 
   private final String delim;
   private final Pattern ignoredLines;
   
-  public static PCollection<Elements> apply(PCollection<String> in, String delim) {
+  public static PCollection<Record> apply(PCollection<String> in, String delim) {
     return apply(in, delim, null);
   }
   
-  public static PCollection<Elements> apply(PCollection<String> in, String delim,
+  public static PCollection<Record> apply(PCollection<String> in, String delim,
       Pattern ignoredLines) {
     return in.parallelDo("string-split",
         new StringSplitFn(delim, ignoredLines),
-        ElementsList.PTYPE);
+        MLRecords.csvRecord(in.getTypeFamily(), delim));
   }
   
   public StringSplitFn(String delim, Pattern ignoredLines) {
@@ -48,18 +49,12 @@ public class StringSplitFn extends DoFn<String, Elements> {
   }
 
   @Override
-  public void process(String line, Emitter<Elements> emitter) {
+  public void process(String line, Emitter<Record> emitter) {
     if (line == null || line.isEmpty()) {
       return;
     } else if (ignoredLines != null && ignoredLines.matcher(line).find()) {
       return;
     }
-    List<Element> ret = Lists.newArrayList();
-    int fieldId = 0;
-    for (String s : line.split(delim)) {
-      ret.add(new Element(fieldId, s));
-      fieldId++;
-    }
-    emitter.emit(new ElementsList(ret));
+    emitter.emit(new CSVRecord(line.split(delim)));
   }
 }

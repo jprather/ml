@@ -16,16 +16,21 @@ package com.cloudera.science.ml.parallel.normalize;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.Serializable;
+
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.mahout.math.Vector;
 import org.junit.Test;
 
+import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.vectors.VectorRecord;
 import com.cloudera.science.ml.core.vectors.Vectors;
 import com.cloudera.science.ml.parallel.types.MLAvros;
 import com.google.common.collect.ImmutableList;
 
-public class SummaryTest {
+public class SummaryTest implements Serializable {
   private PCollection<Vector> vecs = MemPipeline.typedCollectionOf(
       MLAvros.vector(),
       Vectors.of(1.0, 3.0),
@@ -35,7 +40,12 @@ public class SummaryTest {
   
   @Test
   public void testZScores() {
-    PCollection<Elements> elems = ElementsVector.convert(vecs);
+    PCollection<Record> elems = vecs.parallelDo(new MapFn<Vector, Record>() {
+      @Override
+      public Record map(Vector vec) {
+        return new VectorRecord(vec);
+      }
+    }, null);
     Summarizer sr = new Summarizer();
     Summary s = sr.build(elems).getValue();
     Standardizer stand = Standardizer.builder()

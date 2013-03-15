@@ -15,6 +15,8 @@
 package com.cloudera.science.ml.parallel.types;
 
 
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
@@ -22,6 +24,8 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.avro.MLVector;
+import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.avro.AvroRecord;
 import com.cloudera.science.ml.core.vectors.VectorConvert;
 
 
@@ -39,6 +43,23 @@ public class MLAvros {
   
   public static AvroType<NamedVector> namedVector() {
     return namedVector;
+  }
+  
+  public static AvroType<Record> record(Schema schema) {
+    return Avros.derived(Record.class,
+        new MapFn<GenericData.Record, Record>() {
+          @Override
+          public Record map(GenericData.Record gdr) {
+            return new AvroRecord(gdr);
+          }
+        },
+        new MapFn<Record, GenericData.Record>() {
+          @Override
+          public GenericData.Record map(Record r) {
+            return ((AvroRecord) r).getImpl();
+          }
+        },
+        Avros.generics(schema));
   }
   
   private static AvroType<Vector> vector = Avros.derived(Vector.class,

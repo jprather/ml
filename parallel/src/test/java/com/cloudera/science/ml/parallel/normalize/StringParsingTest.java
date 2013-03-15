@@ -20,9 +20,11 @@ import java.util.regex.Pattern;
 
 import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mem.MemPipeline;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.mahout.math.Vector;
 import org.junit.Test;
 
+import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.core.vectors.Vectors;
 import com.cloudera.science.ml.parallel.types.MLAvros;
 import com.google.common.collect.ImmutableList;
@@ -34,11 +36,12 @@ public class StringParsingTest {
 
   @Test
   public void testSimple() {
-    PCollection<String> input = MemPipeline.collectionOf(
+    PCollection<String> input = MemPipeline.typedCollectionOf(
+        Avros.strings(),
         "1.0,2.0,3.0",
         "0.4,2.0,1.0",
         "3.2,17.0,29.0");
-    PCollection<Elements> elems = StringSplitFn.apply(input, ",");
+    PCollection<Record> elems = StringSplitFn.apply(input, ",");
     Standardizer s = Standardizer.builder().build();
     PCollection<Vector> vecs = s.apply(elems, MLAvros.vector());
     assertEquals(ImmutableList.of(Vectors.of(1, 2, 3), Vectors.of(0.4, 2, 1),
@@ -47,13 +50,14 @@ public class StringParsingTest {
   
   @Test
   public void testRegex() {
-    PCollection<String> input = MemPipeline.collectionOf(
+    PCollection<String> input = MemPipeline.typedCollectionOf(
+        Avros.strings(),
         "#A line of text we want to ignore",
         "1.0,2.0,3.0",
         "0.4,2.0,1.0",
         "#Another inline comment, just to be irritating",
         "3.2,17.0,29.0");
-    PCollection<Elements> elems = StringSplitFn.apply(input, ",",
+    PCollection<Record> elems = StringSplitFn.apply(input, ",",
         Pattern.compile("^#"));
     Standardizer s = Standardizer.builder().build();
     PCollection<Vector> vecs = s.apply(elems, MLAvros.vector());
@@ -63,11 +67,12 @@ public class StringParsingTest {
   
   @Test
   public void testCategorical() {
-    PCollection<String> input = MemPipeline.collectionOf(
+    PCollection<String> input = MemPipeline.typedCollectionOf(
+        Avros.strings(),
         "1.0,a,3.0,y",
         "0.4,b,1.0,x",
         "3.2,c,29.0,z");
-    PCollection<Elements> elems = StringSplitFn.apply(input, ",");
+    PCollection<Record> elems = StringSplitFn.apply(input, ",");
     Summary s = new Summarizer()
       .defaultToSymbolic(true)
       .exceptionColumns(0, 2)
@@ -83,11 +88,12 @@ public class StringParsingTest {
   
   @Test
   public void testNamed() {
-    PCollection<String> input = MemPipeline.collectionOf(
+    PCollection<String> input = MemPipeline.typedCollectionOf(
+        Avros.strings(),
         "1.0,a,3.0,y",
         "0.4,b,1.0,x",
         "3.2,c,29.0,z");
-    PCollection<Elements> elems = StringSplitFn.apply(input, ",");
+    PCollection<Record> elems = StringSplitFn.apply(input, ",");
     Summary s = new Summarizer()
       .defaultToSymbolic(false)
       .exceptionColumns(3)

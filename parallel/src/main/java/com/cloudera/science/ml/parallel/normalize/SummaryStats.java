@@ -194,19 +194,19 @@ public class SummaryStats implements Serializable {
     }
   }
   
-  public void add(Element elem, boolean symbolic) {
-    if (symbolic) {
-      Map<String, Entry> h = histogram();
-      Entry entry = h.get(elem.getSymbolic());
-      if (entry == null) {
-        entry = new Entry(h.size()).inc(); // init with count = 1
-        h.put(elem.getSymbolic(), entry);
-      } else {
-        entry.inc();
-      }
+  public void addSymbol(String symbol) {
+    Map<String, Entry> h = histogram();
+    Entry entry = h.get(symbol);
+    if (entry == null) {
+      entry = new Entry(h.size()).inc(); // init with count = 1
+      h.put(symbol, entry);
     } else {
-      numeric().update(elem.getNumeric());
+      entry.inc();
     }
+  }
+  
+  public void addNumeric(double value) {
+    numeric().update(value);
   }
   
   public void merge(SummaryStats summaryStats) {

@@ -18,5 +18,5 @@ package com.cloudera.science.ml.core.records;
  *
  */
 public enum DataType {
-  BOOLEAN, INT, LONG, DOUBLE, STRING, LIST, MAP, RECORD;
+  BOOLEAN, INT, LONG, DOUBLE, STRING, RECORD;
 }

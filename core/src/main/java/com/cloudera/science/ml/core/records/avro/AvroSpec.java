@@ -37,10 +37,6 @@ public class AvroSpec implements Spec {
     Schema.Type st = schema.getType();
     // TODO: Null check
     switch (st) {
-    case ARRAY:
-      return DataType.LIST;
-    case MAP:
-      return DataType.MAP;
     case RECORD:
       return DataType.RECORD;
     case INT:
@@ -94,26 +90,7 @@ public class AvroSpec implements Spec {
   }
 
   @Override
-  public Spec arrayValue() {
-    if (dataType == DataType.LIST) {
-      return new AvroSpec(schema.getElementType());
-    }
-    return null;
-  }
-
-  @Override
-  public Spec mapKey() {
-    if (dataType == DataType.MAP) {
-      return new AvroSpec(Schema.create(Schema.Type.STRING));
-    }
-    return null;
-  }
-
-  @Override
-  public Spec mapValue() {
-    if (dataType == DataType.MAP) {
-      return new AvroSpec(schema.getValueType());
-    }
-    return null;
+  public FieldSpec getField(int index) {
+    return new AvroFieldSpec(schema.getFields().get(index));
   }
 }

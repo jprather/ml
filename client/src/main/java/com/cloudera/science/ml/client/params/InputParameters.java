@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
-import org.apache.avro.generic.GenericData.Record;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.mapred.FsInput;
 import org.apache.crunch.PCollection;
@@ -42,11 +42,11 @@ import org.apache.mahout.math.Vector;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.converters.CommaParameterSplitter;
+import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.mahout.types.MLWritables;
-import com.cloudera.science.ml.parallel.normalize.Elements;
-import com.cloudera.science.ml.parallel.normalize.ElementsVector;
 import com.cloudera.science.ml.parallel.normalize.StringSplitFn;
 import com.cloudera.science.ml.parallel.types.MLAvros;
+import com.cloudera.science.ml.parallel.types.MLRecords;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
@@ -86,10 +86,10 @@ public class InputParameters {
       });
     } else if ("avro".equals(format)) {
       Schema schema = getSchemaForInputs(pipeline.getConfiguration());
-      final AvroType<Record> at = Avros.generics(schema);
-      return (PCollection<?>) fromInputs(new Function<String, PCollection<Record>>() {
+      final AvroType<GenericData.Record> at = Avros.generics(schema);
+      return (PCollection<?>) fromInputs(new Function<String, PCollection<GenericData.Record>>() {
         @Override
-        public PCollection<Record> apply(String input) {
+        public PCollection<GenericData.Record> apply(String input) {
           return pipeline.read(From.avroFile(input, at));
         }
       });
@@ -162,9 +162,9 @@ public class InputParameters {
     return ret;
   }
 
-  public PCollection<Elements> getElements(final Pipeline pipeline) {
+  public PCollection<Record> getRecords(final Pipeline pipeline) {
     format = format.toLowerCase();
-    PCollection<Elements> ret = null;
+    PCollection<Record> ret = null;
     if ("text".equals(format)) {
       PCollection<String> text = fromInputs(new Function<String, PCollection<String>>() {
         @Override
@@ -175,18 +175,18 @@ public class InputParameters {
       Pattern pattern = ignoreLines == null ? null : Pattern.compile(ignoreLines);
       ret = StringSplitFn.apply(text, delim, pattern);
     } else if ("seq".equals(format)) {
-      final PType<Elements> ptype = ElementsVector.ptype(MLWritables.vector());
-      ret = fromInputs(new Function<String, PCollection<Elements>>() {
+      final PType<Record> ptype = MLRecords.vectorRecord(MLWritables.vector());
+      ret = fromInputs(new Function<String, PCollection<Record>>() {
         @Override
-        public PCollection<Elements> apply(String input) {
+        public PCollection<Record> apply(String input) {
           return pipeline.read(From.sequenceFile(input, ptype));
         }
       });
     } else if ("avro".equals(format)) {
-      final AvroType<Elements> ptype = (AvroType<Elements>) ElementsVector.ptype(MLAvros.vector());
-      ret = fromInputs(new Function<String, PCollection<Elements>>() {
+      final AvroType<Record> ptype = (AvroType<Record>) MLRecords.vectorRecord(MLAvros.vector());
+      ret = fromInputs(new Function<String, PCollection<Record>>() {
         @Override
-        public PCollection<Elements> apply(String input) {
+        public PCollection<Record> apply(String input) {
           return pipeline.read(From.avroFile(input, ptype));
         }
       });

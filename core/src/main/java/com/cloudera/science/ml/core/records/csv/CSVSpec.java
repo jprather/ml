@@ -49,13 +49,13 @@ public class CSVSpec implements Spec {
   }
   
   @Override
-  public int size() {
-    return fields.size();
+  public DataType getDataType() {
+    return dataType;
   }
 
   @Override
-  public DataType getDataType() {
-    return dataType;
+  public int size() {
+    return fields.size();
   }
 
   @Override
@@ -69,17 +69,8 @@ public class CSVSpec implements Spec {
   }
 
   @Override
-  public Spec arrayValue() {
-    throw new UnsupportedOperationException("CSVs do not support arrays");
-  }
-
-  @Override
-  public Spec mapKey() {
-    throw new UnsupportedOperationException("CSVs do not support maps");
-  }
-
-  @Override
-  public Spec mapValue() {
-    throw new UnsupportedOperationException("CSVs do not support maps");
+  public FieldSpec getField(int index) {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

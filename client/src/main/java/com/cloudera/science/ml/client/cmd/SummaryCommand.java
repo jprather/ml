@@ -28,7 +28,7 @@ import com.beust.jcommander.converters.CommaParameterSplitter;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
 import com.cloudera.science.ml.client.params.SummaryParameters;
-import com.cloudera.science.ml.parallel.normalize.Elements;
+import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.parallel.normalize.Header;
 import com.cloudera.science.ml.parallel.normalize.Summarizer;
 import com.cloudera.science.ml.parallel.normalize.Summary;
@@ -78,7 +78,7 @@ public class SummaryCommand implements Command {
   @Override
   public int execute(Configuration conf) throws Exception {
     Pipeline p = pipelineParams.create(SummaryCommand.class, conf);
-    PCollection<Elements> elems = inputParams.getElements(p);
+    PCollection<Record> records = inputParams.getRecords(p);
 
     Header header = null;
     if (headerFile != null) {
@@ -103,7 +103,7 @@ public class SummaryCommand implements Command {
         .exceptionColumns(exceptionColumns)
         .ignoreColumns(intIgnoredColumns)
         .ignoreColumns(header.getFieldId(idColumn));
-    Summary summary = summarizer.build(elems).getValue();
+    Summary summary = summarizer.build(records).getValue();
     summaryParams.save(summary, summaryFile);
 
     p.done();

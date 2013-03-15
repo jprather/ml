@@ -14,9 +14,6 @@
  */
 package com.cloudera.science.ml.core.records;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  *
  */
@@ -25,45 +22,31 @@ public interface Record {
  
   Record copy(boolean deep);
   
-  Object get(String fieldName);
-  
-  <T> T get(String fieldName, Class<T> typeClass);
-  
+  Boolean getBoolean(int index);
+
   Boolean getBoolean(String fieldName);
+
+  Double getDouble(int index);
   
   Double getDouble(String fieldName);
   
+  Integer getInteger(int index);
+
   Integer getInteger(String fieldName);
-  
-  List<?> getList(String fieldName);
-  
-  <T> List<T> getList(String fieldName, Class<T> typeClass);
-  
+
+  Long getLong(int index);
+
   Long getLong(String fieldName);
-  
-  Map<?, ?> getMap(String fieldName);
-  
-  <K, V> Map<K, V> getMap(String fieldName, Class<K> keyClass, Class<V> valueClass);
+
+  String getString(int index);
   
   String getString(String fieldName);
   
-  Record getRecord(String fieldName);
+  Record set(int index, Object value);
   
   Record set(String fieldName, Object value);
   
-  Record setBoolean(String fieldName, Boolean value);
+  String getAsString(int index);
   
-  Record setDouble(String fieldName, Double value);
-  
-  Record setInteger(String fieldName, Integer value);
-  
-  Record setList(String fieldName, List<?> value);
-  
-  Record setLong(String fieldName, Long value);
-  
-  Record setMap(String fieldName, Map<?, ?> value);
-
-  Record setString(String fieldName, String value);
-  
-  Record setRecord(String fieldName, Record value);
+  double getAsDouble(int index);
 }

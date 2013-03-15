@@ -14,11 +14,7 @@
  */
 package com.cloudera.science.ml.core.records.avro;
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
 
 import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.core.records.Spec;
@@ -32,6 +28,10 @@ public class AvroRecord implements Record {
   
   public AvroRecord(GenericData.Record impl) {
     this.impl = impl;
+  }
+  
+  public GenericData.Record getImpl() {
+    return impl;
   }
   
   public Record copy(boolean deep) {
@@ -48,66 +48,61 @@ public class AvroRecord implements Record {
   }
 
   @Override
-  public Object get(String fieldName) {
-    return impl.get(fieldName);
+  public Boolean getBoolean(int index) {
+    return (Boolean) impl.get(index);
   }
-
-  @Override
-  public <T> T get(String fieldName, Class<T> typeClass) {
-    return typeClass.cast(get(fieldName));
-  }
-
+  
   @Override
   public Boolean getBoolean(String fieldName) {
-    return get(fieldName, Boolean.class);
+    return (Boolean) impl.get(fieldName);
   }
 
+  @Override
+  public Double getDouble(int index) {
+    return (Double) impl.get(index);
+  }
+  
   @Override
   public Double getDouble(String fieldName) {
-    return get(fieldName, Double.class);
+    return (Double) impl.get(fieldName);
   }
 
+  @Override
+  public Integer getInteger(int index) {
+    return (Integer) impl.get(index);
+  }
+  
   @Override
   public Integer getInteger(String fieldName) {
-    return get(fieldName, Integer.class);
+    return (Integer) impl.get(fieldName);
   }
 
   @Override
-  public List<?> getList(String fieldName) {
-    return get(fieldName, List.class);
+  public Long getLong(int index) {
+    return (Long) impl.get(index);
   }
-
-  @Override
-  public <T> List<T> getList(String fieldName, final Class<T> typeClass) {
-    return (List<T>) get(fieldName, List.class);
-  }
-
+  
   @Override
   public Long getLong(String fieldName) {
-    return get(fieldName, Long.class);
+    return (Long) impl.get(fieldName);
   }
 
   @Override
-  public Map<?, ?> getMap(String fieldName) {
-    return get(fieldName, Map.class);
+  public String getString(int index) {
+    return (String) impl.get(index);
   }
-
-  @Override
-  public <K, V> Map<K, V> getMap(String fieldName, Class<K> keyClass, Class<V> valueClass) {
-    return (Map<K, V>) get(fieldName, Map.class);
-  }
-
+  
   @Override
   public String getString(String fieldName) {
-    return get(fieldName, String.class);
+    return (String) impl.get(fieldName);
   }
 
   @Override
-  public Record getRecord(String fieldName) {
-    GenericData.Record rec = get(fieldName, GenericData.Record.class);
-    return new AvroRecord(rec);
+  public Record set(int index, Object value) {
+    impl.put(index, value);
+    return this;
   }
-
+  
   @Override
   public Record set(String fieldName, Object value) {
     impl.put(fieldName, value);
@@ -115,51 +110,12 @@ public class AvroRecord implements Record {
   }
 
   @Override
-  public Record setBoolean(String fieldName, Boolean value) {
-    impl.put(fieldName, value);
-    return this;
+  public String getAsString(int index) {
+    return impl.get(index).toString();
   }
 
   @Override
-  public Record setDouble(String fieldName, Double value) {
-    impl.put(fieldName, value);
-    return this;
+  public double getAsDouble(int index) {
+    return ((Number) impl.get(index)).doubleValue();
   }
-
-  @Override
-  public Record setInteger(String fieldName, Integer value) {
-    impl.put(fieldName, value);
-    return this;
-  }
-
-  @Override
-  public Record setList(String fieldName, List<?> value) {
-    impl.put(fieldName, value);
-    return this;
-  }
-
-  @Override
-  public Record setLong(String fieldName, Long value) {
-    impl.put(fieldName, value);
-    return this;
-  }
-
-  @Override
-  public Record setMap(String fieldName, Map<?, ?> value) {
-    impl.put(fieldName, value);
-    return this;
-  }
-
-  @Override
-  public Record setString(String fieldName, String value) {
-    impl.put(fieldName, value);
-    return this;
-  }
-
-  @Override
-  public Record setRecord(String fieldName, Record value) {
-    impl.put(fieldName, value);
-    return this;
-  }
-
 }

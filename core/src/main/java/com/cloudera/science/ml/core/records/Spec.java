@@ -27,11 +27,7 @@ public interface Spec {
   
   List<String> getFieldNames();
 
-  FieldSpec getField(String fieldName);
+  FieldSpec getField(int index);
   
-  Spec arrayValue();
-  
-  Spec mapKey();
-  
-  Spec mapValue();
+  FieldSpec getField(String fieldName);  
 }
