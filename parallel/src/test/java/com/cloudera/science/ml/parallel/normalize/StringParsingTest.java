@@ -23,7 +23,7 @@ import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.mahout.math.Vector;
 import org.junit.Test;
 
-import com.cloudera.science.ml.core.Vectors;
+import com.cloudera.science.ml.core.vectors.Vectors;
 import com.cloudera.science.ml.parallel.types.MLAvros;
 import com.google.common.collect.ImmutableList;
 

@@ -14,7 +14,7 @@
  */
 package com.cloudera.science.ml.kmeans.core;
 
-import com.cloudera.science.ml.core.Centers;
+import com.cloudera.science.ml.core.vectors.Centers;
 import com.google.common.base.Preconditions;
 
 /**

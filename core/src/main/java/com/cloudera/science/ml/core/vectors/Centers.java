@@ -12,7 +12,7 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.core;
+package com.cloudera.science.ml.core.vectors;
 
 import java.util.AbstractList;
 import java.util.Arrays;

@@ -12,7 +12,7 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.core;
+package com.cloudera.science.ml.core.vectors;
 
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +32,7 @@ import com.google.common.collect.Lists;
 /**
  * Utilities for converting from the Avro and the Java implementations of the core ML type classes.
  */
-public final class MLConvert {
+public final class VectorConvert {
 
   public static Vector toVector(MLVector input) {
     return TO_VECTOR.apply(input);
@@ -145,5 +145,5 @@ public final class MLConvert {
     }
   };
   
-  private MLConvert() {}
+  private VectorConvert() {}
 }

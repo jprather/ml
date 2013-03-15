@@ -22,7 +22,7 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.avro.MLVector;
-import com.cloudera.science.ml.core.MLConvert;
+import com.cloudera.science.ml.core.vectors.VectorConvert;
 
 
 /**
@@ -45,13 +45,13 @@ public class MLAvros {
       new MapFn<MLVector, Vector>() {
         @Override
         public Vector map(MLVector vec) {
-          return MLConvert.toVector(vec);
+          return VectorConvert.toVector(vec);
         }
       },
       new MapFn<Vector, MLVector>() {
         @Override
         public MLVector map(Vector vec) {
-          return MLConvert.fromVector(vec);
+          return VectorConvert.fromVector(vec);
         }
       },
       Avros.specifics(MLVector.class));
@@ -60,13 +60,13 @@ public class MLAvros {
       new MapFn<MLVector, NamedVector>() {
         @Override
         public NamedVector map(MLVector vec) {
-          return (NamedVector) MLConvert.toVector(vec);
+          return (NamedVector) VectorConvert.toVector(vec);
         }
       },
       new MapFn<NamedVector, MLVector>() {
         @Override
         public MLVector map(NamedVector vec) {
-          return MLConvert.fromVector(vec);
+          return VectorConvert.fromVector(vec);
         }
       },
       Avros.specifics(MLVector.class));

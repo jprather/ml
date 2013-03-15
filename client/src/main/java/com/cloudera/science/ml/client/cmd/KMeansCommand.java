@@ -37,9 +37,9 @@ import com.cloudera.science.ml.avro.MLCenters;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
 import com.cloudera.science.ml.client.params.RandomParameters;
-import com.cloudera.science.ml.core.Centers;
-import com.cloudera.science.ml.core.MLConvert;
-import com.cloudera.science.ml.core.Weighted;
+import com.cloudera.science.ml.core.vectors.Centers;
+import com.cloudera.science.ml.core.vectors.VectorConvert;
+import com.cloudera.science.ml.core.vectors.Weighted;
 import com.cloudera.science.ml.kmeans.core.KMeans;
 import com.cloudera.science.ml.kmeans.core.KMeansInitStrategy;
 import com.cloudera.science.ml.kmeans.core.StoppingCriteria;
@@ -162,7 +162,7 @@ public class KMeansCommand implements Command {
     SpecificDatumWriter<MLCenters> sdw = new SpecificDatumWriter<MLCenters>(MLCenters.class);
     DataFileWriter<MLCenters> dfw = new DataFileWriter<MLCenters>(sdw);
     dfw.create(MLCenters.SCHEMA$, new File(saveClustersTo));
-    for (MLCenters mlc : Lists.transform(centers, MLConvert.FROM_CENTERS)) {
+    for (MLCenters mlc : Lists.transform(centers, VectorConvert.FROM_CENTERS)) {
       dfw.append(mlc);
     }
     dfw.close();

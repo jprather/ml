@@ -12,15 +12,15 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.core;
+package com.cloudera.science.ml.core.vectors;
 
 import static org.junit.Assert.assertEquals;
 
 import org.apache.mahout.math.Vector;
 import org.junit.Test;
 
-import com.cloudera.science.ml.core.Centers;
-import com.cloudera.science.ml.core.Vectors;
+import com.cloudera.science.ml.core.vectors.Centers;
+import com.cloudera.science.ml.core.vectors.Vectors;
 
 public class CentersTest {
   private static double THRESH = 0.001;

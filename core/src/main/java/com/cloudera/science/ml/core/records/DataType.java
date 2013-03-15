@@ -12,23 +12,11 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.parallel.normalize;
-
-import java.util.AbstractList;
-
-import org.apache.mahout.math.Vector;
-
-import com.cloudera.science.ml.core.vectors.Vectors;
+package com.cloudera.science.ml.core.records;
 
 /**
  *
  */
-public abstract class Elements extends AbstractList<Element> {
-  public Vector asVector(double[] values, boolean sparse) {
-    if (sparse) {
-      return Vectors.sparse(values.length).assign(values);
-    } else {
-      return Vectors.of(values);
-    }
-  }
+public enum DataType {
+  BOOLEAN, INT, LONG, DOUBLE, STRING, LIST, MAP, RECORD;
 }

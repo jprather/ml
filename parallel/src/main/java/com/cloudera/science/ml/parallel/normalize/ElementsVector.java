@@ -20,7 +20,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.mahout.math.Vector;
 
-import com.cloudera.science.ml.core.Vectors;
+import com.cloudera.science.ml.core.vectors.Vectors;
 
 /**
  *

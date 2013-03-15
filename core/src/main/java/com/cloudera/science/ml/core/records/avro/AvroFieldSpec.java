@@ -12,23 +12,37 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.parallel.normalize;
+package com.cloudera.science.ml.core.records.avro;
 
-import java.util.AbstractList;
+import org.apache.avro.Schema;
 
-import org.apache.mahout.math.Vector;
-
-import com.cloudera.science.ml.core.vectors.Vectors;
+import com.cloudera.science.ml.core.records.FieldSpec;
+import com.cloudera.science.ml.core.records.Spec;
 
 /**
  *
  */
-public abstract class Elements extends AbstractList<Element> {
-  public Vector asVector(double[] values, boolean sparse) {
-    if (sparse) {
-      return Vectors.sparse(values.length).assign(values);
-    } else {
-      return Vectors.of(values);
-    }
+public class AvroFieldSpec implements FieldSpec {
+
+  private Schema.Field field;
+  
+  public AvroFieldSpec(Schema.Field field) {
+    this.field = field;
   }
+  
+  @Override
+  public String name() {
+    return field.name();
+  }
+
+  @Override
+  public int position() {
+    return field.pos();
+  }
+
+  @Override
+  public Spec spec() {
+    return new AvroSpec(field.schema());
+  }
+
 }

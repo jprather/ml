@@ -23,9 +23,9 @@ import org.apache.mahout.math.Vector;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.science.ml.core.Centers;
-import com.cloudera.science.ml.core.Vectors;
-import com.cloudera.science.ml.core.Weighted;
+import com.cloudera.science.ml.core.vectors.Centers;
+import com.cloudera.science.ml.core.vectors.Vectors;
+import com.cloudera.science.ml.core.vectors.Weighted;
 import com.google.common.collect.ImmutableList;
 
 public class KMeansTest {

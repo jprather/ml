@@ -21,8 +21,8 @@ import java.util.Set;
 
 import org.apache.mahout.math.Vector;
 
-import com.cloudera.science.ml.core.Centers;
-import com.cloudera.science.ml.core.Weighted;
+import com.cloudera.science.ml.core.vectors.Centers;
+import com.cloudera.science.ml.core.vectors.Weighted;
 import com.google.common.collect.Sets;
 
 /**

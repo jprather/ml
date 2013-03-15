@@ -18,7 +18,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.mahout.math.Vector;
 
-import com.cloudera.science.ml.core.Vectors;
+import com.cloudera.science.ml.core.vectors.Vectors;
 
 /**
  * Functions for applying scale factors to a {@code PCollection<Vector>} instance, which is

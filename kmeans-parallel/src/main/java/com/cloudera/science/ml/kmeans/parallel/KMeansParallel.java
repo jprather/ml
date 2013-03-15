@@ -38,10 +38,10 @@ import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.avro.MLClusterAssignment;
 import com.cloudera.science.ml.avro.MLVector;
-import com.cloudera.science.ml.core.Centers;
-import com.cloudera.science.ml.core.MLConvert;
-import com.cloudera.science.ml.core.Vectors;
-import com.cloudera.science.ml.core.Weighted;
+import com.cloudera.science.ml.core.vectors.Centers;
+import com.cloudera.science.ml.core.vectors.VectorConvert;
+import com.cloudera.science.ml.core.vectors.Vectors;
+import com.cloudera.science.ml.core.vectors.Weighted;
 import com.cloudera.science.ml.kmeans.parallel.CentersIndex.Distances;
 import com.cloudera.science.ml.parallel.crossfold.Crossfold;
 import com.cloudera.science.ml.parallel.pobject.ListOfListsPObject;
@@ -236,7 +236,7 @@ public class KMeansParallel {
 
     @Override
     public void process(V vec, Emitter<MLClusterAssignment> emitter) {
-      MLVector mlvec = MLConvert.fromVector(vec);
+      MLVector mlvec = VectorConvert.fromVector(vec);
       Distances d = centers.getDistances(vec);
       for (int i = 0; i < d.closestPoints.length; i++) {
         emitter.emit(MLClusterAssignment.newBuilder()
