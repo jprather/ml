@@ -1,11 +1,19 @@
 #!/bin/bash
 
+HH=${HADOOP_PREFIX:?"Need to set HADOOP_PREFIX to client-side hadoop base dir"}
+
 BASEDIR=$(dirname $0)
 TARGET=$BASEDIR/../target
 MAINJAR=$TARGET/ml-client-0.1.0.jar
 LJ=$TARGET/lib/*.jar
 
+if [ ! -e $MAINJAR ]
+then
+  echo "You need to run 'mvn clean install' to install the client jars"
+  exit 1
+fi
+
 export LIBJARS=$(echo ${LJ} | tr " " ",")
 export HADOOP_CLASSPATH=`echo ${LIBJARS} | sed s/,/:/g`
 
-$HADOOP_HOME/bin/hadoop jar $MAINJAR com.cloudera.science.ml.client.Main -libjars ${LIBJARS} $@
+$HADOOP_PREFIX/bin/hadoop jar $MAINJAR com.cloudera.science.ml.client.Main -libjars ${LIBJARS} $@

@@ -42,7 +42,7 @@ import com.google.common.collect.Lists;
  *
  */
 @Parameters(commandDescription = "Prepare input (CSV or Vectors) for k-means runs")
-public class StandardizeCommand implements Command {
+public class NormalizeCommand implements Command {
 
   @Parameter(names = "--ignore-columns",
       description = "A CSV of ints/strings that specifies columns in the input to ignore (zero-indexed)",
@@ -88,7 +88,7 @@ public class StandardizeCommand implements Command {
   
   @Override
   public int execute(Configuration conf) throws Exception {
-    Pipeline p = pipelineParams.create(StandardizeCommand.class, conf);
+    Pipeline p = pipelineParams.create(NormalizeCommand.class, conf);
     PCollection<Record> records = inputParams.getRecords(p);
 
     Summary summary = null;

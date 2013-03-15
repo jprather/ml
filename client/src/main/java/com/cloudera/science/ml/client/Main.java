@@ -25,7 +25,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.cloudera.science.ml.client.cmd.Command;
 import com.cloudera.science.ml.client.cmd.KMeansCommand;
-import com.cloudera.science.ml.client.cmd.StandardizeCommand;
+import com.cloudera.science.ml.client.cmd.NormalizeCommand;
 import com.cloudera.science.ml.client.cmd.SampleCommand;
 import com.cloudera.science.ml.client.cmd.SummaryCommand;
 import com.google.common.collect.ImmutableSortedMap;
@@ -38,7 +38,7 @@ public class Main extends Configured implements Tool {
   private static final Map<String, Command> COMMANDS = ImmutableSortedMap.<String, Command>naturalOrder()
       .put("sample", new SampleCommand())
       .put("summary", new SummaryCommand())
-      .put("standardize", new StandardizeCommand())
+      .put("normalize", new NormalizeCommand())
       .put("kmeans", new KMeansCommand())
       .build();
   

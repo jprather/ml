@@ -35,7 +35,7 @@ public class Help {
     if (helpCommands.isEmpty()) {
       System.out.println("Commands:\n");
       for (Map.Entry<String, Command> e : cmds.entrySet()) {
-        System.out.println(String.format("\t%s\t\t%s", e.getKey(), e.getValue().getDescription()));
+        System.out.println(String.format("   %s\t\t\t%s", e.getKey(), e.getValue().getDescription()));
       }
       System.out.println("\nYou can get detailed help on any individual command by typing 'help <cmd>'");
     } else {
