@@ -33,7 +33,7 @@ import com.cloudera.science.ml.client.params.PipelineParameters;
 import com.cloudera.science.ml.client.params.SummaryParameters;
 import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.parallel.normalize.Header;
-import com.cloudera.science.ml.parallel.normalize.Standardizer;
+import com.cloudera.science.ml.parallel.normalize.Normalizer;
 import com.cloudera.science.ml.parallel.normalize.Summary;
 import com.cloudera.science.ml.parallel.normalize.Transform;
 import com.google.common.collect.Lists;
@@ -100,7 +100,7 @@ public class NormalizeCommand implements Command {
       header = new Header();
     }
     
-    Standardizer standardizer = Standardizer.builder()
+    Normalizer normalizer = Normalizer.builder()
         .summary(summary)
         .sparse(sparse)
         .defaultTransform(getDefaultTransform())
@@ -109,7 +109,7 @@ public class NormalizeCommand implements Command {
         .build();
     
     PType<Vector> vecPType = outputParams.getVectorPType();
-    PCollection<Vector> vecs = standardizer.apply(records, vecPType);
+    PCollection<Vector> vecs = normalizer.apply(records, vecPType);
     outputParams.write(vecs, outputFile);
     
     PipelineResult pr = p.done();

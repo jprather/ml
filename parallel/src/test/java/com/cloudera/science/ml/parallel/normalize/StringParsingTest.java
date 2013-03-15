@@ -42,7 +42,7 @@ public class StringParsingTest {
         "0.4,2.0,1.0",
         "3.2,17.0,29.0");
     PCollection<Record> elems = StringSplitFn.apply(input, ",");
-    Standardizer s = Standardizer.builder().build();
+    Normalizer s = Normalizer.builder().build();
     PCollection<Vector> vecs = s.apply(elems, MLAvros.vector());
     assertEquals(ImmutableList.of(Vectors.of(1, 2, 3), Vectors.of(0.4, 2, 1),
         Vectors.of(3.2, 17, 29)), vecs.materialize());
@@ -59,7 +59,7 @@ public class StringParsingTest {
         "3.2,17.0,29.0");
     PCollection<Record> elems = StringSplitFn.apply(input, ",",
         Pattern.compile("^#"));
-    Standardizer s = Standardizer.builder().build();
+    Normalizer s = Normalizer.builder().build();
     PCollection<Vector> vecs = s.apply(elems, MLAvros.vector());
     assertEquals(ImmutableList.of(Vectors.of(1, 2, 3), Vectors.of(0.4, 2, 1),
         Vectors.of(3.2, 17, 29)), vecs.materialize());
@@ -77,7 +77,7 @@ public class StringParsingTest {
       .defaultToSymbolic(true)
       .exceptionColumns(0, 2)
       .build(elems).getValue();
-    Standardizer st = Standardizer.builder().summary(s).build();
+    Normalizer st = Normalizer.builder().summary(s).build();
     PCollection<Vector> vecs = st.apply(elems, MLAvros.vector());
     assertEquals(ImmutableList.of(
         Vectors.of(1.0, 1, 0, 0, 3.0, 0.0, 1.0, 0.0),
@@ -99,7 +99,7 @@ public class StringParsingTest {
       .exceptionColumns(3)
       .ignoreColumns(1)
       .build(elems).getValue();
-    Standardizer st = Standardizer.builder().summary(s).idColumn(1).build();
+    Normalizer st = Normalizer.builder().summary(s).idColumn(1).build();
     PCollection<Vector> vecs = st.apply(elems, MLAvros.vector());
     assertEquals(ImmutableList.of(
         Vectors.named("a", 1.0, 3.0, 0.0, 1.0, 0.0),

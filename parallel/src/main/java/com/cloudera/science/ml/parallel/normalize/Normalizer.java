@@ -36,9 +36,9 @@ import com.google.common.collect.Sets;
 /**
  *
  */
-public class Standardizer implements Serializable {
+public class Normalizer implements Serializable {
 
-  private static final Log LOG = LogFactory.getLog(Standardizer.class);
+  private static final Log LOG = LogFactory.getLog(Normalizer.class);
   
   private final Summary summary;
   private final boolean sparse;
@@ -94,13 +94,13 @@ public class Standardizer implements Serializable {
       return this;
     }
     
-    public Standardizer build() {
-      return new Standardizer(s, sparse, idColumn, ignoredColumns, defaultTransform,
+    public Normalizer build() {
+      return new Normalizer(s, sparse, idColumn, ignoredColumns, defaultTransform,
           transforms);
     }
   }
   
-  private Standardizer(Summary summary, boolean sparse, int idColumn,
+  private Normalizer(Summary summary, boolean sparse, int idColumn,
       Set<Integer> ignoredColumns, Transform defaultTransform,
       Map<Integer, Transform> transforms) {
     this.summary = summary;

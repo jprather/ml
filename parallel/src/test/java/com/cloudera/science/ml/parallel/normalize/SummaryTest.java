@@ -48,7 +48,7 @@ public class SummaryTest implements Serializable {
     }, null);
     Summarizer sr = new Summarizer();
     Summary s = sr.build(elems).getValue();
-    Standardizer stand = Standardizer.builder()
+    Normalizer stand = Normalizer.builder()
         .summary(s)
         .defaultTransform(Transform.Z)
         .build();
