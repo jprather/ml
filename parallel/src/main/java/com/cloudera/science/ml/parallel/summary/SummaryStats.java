@@ -15,6 +15,7 @@
 package com.cloudera.science.ml.parallel.summary;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,7 @@ import org.apache.crunch.Aggregator;
 import org.apache.crunch.fn.Aggregators.SimpleAggregator;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -179,6 +181,12 @@ public class SummaryStats implements Serializable {
   
   public double max() {
     return numeric().max();
+  }
+  
+  public List<String> getLevels() {
+    List<String> levels = Lists.newArrayList(histogram.keySet());
+    Collections.sort(levels);
+    return levels;
   }
   
   public int numLevels() {

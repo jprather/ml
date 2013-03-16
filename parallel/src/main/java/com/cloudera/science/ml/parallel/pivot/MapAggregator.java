@@ -18,16 +18,15 @@ import java.util.Map;
 
 import org.apache.crunch.fn.Aggregators.SimpleAggregator;
 
-import com.cloudera.science.ml.parallel.summary.SummaryStats;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
 /**
  *
  */
-public class MapAggregator extends SimpleAggregator<Map<String, SummaryStats>> {
+public class MapAggregator extends SimpleAggregator<Map<String, Stat>> {
 
-  private Map<String, SummaryStats> values = Maps.newHashMap();
+  private Map<String, Stat> values = Maps.newHashMap();
   
   @Override
   public void reset() {
@@ -35,13 +34,13 @@ public class MapAggregator extends SimpleAggregator<Map<String, SummaryStats>> {
   }
 
   @Override
-  public Iterable<Map<String, SummaryStats>> results() {
+  public Iterable<Map<String, Stat>> results() {
     return ImmutableList.of(values);
   }
 
   @Override
-  public void update(Map<String, SummaryStats> other) {
-    for (Map.Entry<String, SummaryStats> e : other.entrySet()) {
+  public void update(Map<String, Stat> other) {
+    for (Map.Entry<String, Stat> e : other.entrySet()) {
       if (values.containsKey(e.getKey())) {
         values.get(e.getKey()).merge(e.getValue());
       } else {
