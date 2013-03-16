@@ -12,11 +12,12 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.parallel.normalize;
+package com.cloudera.science.ml.parallel.summary;
 
 import java.io.Serializable;
 import java.util.Map;
 
+import com.cloudera.science.ml.core.records.Spec;
 import com.google.common.collect.Maps;
 
 /**
@@ -25,27 +26,29 @@ import com.google.common.collect.Maps;
 public class Summary implements Serializable {
 
   private Map<Integer, SummaryStats> stats = Maps.newTreeMap();
-  private Header header;
+  private Spec spec;
   private long recordCount;
   private int fieldCount;
   
   public Summary() {}
   
-  public Summary(Header header, long recordCount, int fieldCount, Map<Integer, SummaryStats> stats) {
-    this.header = header;
+  public Summary(Spec spec, long recordCount, int fieldCount, Map<Integer, SummaryStats> stats) {
+    this.spec = spec;
     this.recordCount = recordCount;
     this.fieldCount = fieldCount;
     for (Map.Entry<Integer, SummaryStats> e : stats.entrySet()) {
-      String fieldName = header.getFieldName(e.getKey());
-      if (fieldName != null) {
-        e.getValue().setFieldName(fieldName);
+      if (spec != null) {
+        String fieldName = spec.getField(e.getKey()).name();
+        if (fieldName != null) {
+          e.getValue().setFieldName(fieldName);
+        }
       }
       this.stats.put(e.getKey(), e.getValue());
     }
   }
   
-  public Header getHeader() {
-    return header;
+  public Spec getSpec() {
+    return spec;
   }
   
   public Map<Integer, SummaryStats> getAllStats() {

@@ -50,6 +50,10 @@ public class VectorRecord implements Record {
     return vector;
   }
   
+  public Object get(int index) {
+    return vector.getQuick(index);
+  }
+  
   @Override
   public Boolean getBoolean(String fieldName) {
     throw new UnsupportedOperationException();

@@ -14,6 +14,7 @@
  */
 package com.cloudera.science.ml.core.records;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
@@ -30,7 +31,15 @@ public class BasicSpec implements Spec {
   public BasicSpec(DataType dataType, int size) {
     this.dataType = dataType;
     this.size = size;
-    this.fieldNames = ImmutableList.of();
+    if (size > 0) {
+      String[] n = new String[size];
+      for (int i = 0; i < size; i++) {
+        n[i] = "c" + i;
+      }
+      this.fieldNames = Arrays.asList(n);
+    } else {
+      this.fieldNames = ImmutableList.of();
+    }
   }
   
   public BasicSpec(DataType dataType, List<String> fieldNames) {
@@ -56,13 +65,14 @@ public class BasicSpec implements Spec {
 
   @Override
   public FieldSpec getField(final int index) {
+    if (index < 0 || index >= size) {
+      return null;
+    }
+    
     return new FieldSpec() {
       @Override
       public String name() {
-        if (fieldNames != null && !fieldNames.isEmpty()) {
-          return fieldNames.get(index);
-        }
-        return null;
+        return fieldNames.get(index);
       }
 
       @Override
@@ -79,9 +89,10 @@ public class BasicSpec implements Spec {
 
   @Override
   public FieldSpec getField(final String fieldName) {
-    if (fieldNames == null || fieldNames.isEmpty()) {
+    if (!fieldNames.contains(fieldName)) {
       return null;
     }
+    
     return new FieldSpec() {
       @Override
       public String name() {

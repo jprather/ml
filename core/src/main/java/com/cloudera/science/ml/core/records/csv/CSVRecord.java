@@ -55,6 +55,11 @@ public class CSVRecord implements Record {
   }
   
   @Override
+  public Object get(int index) {
+    return values.get(index);
+  }
+  
+  @Override
   public Boolean getBoolean(String fieldName) {
     return Boolean.valueOf(getString(fieldName));
   }

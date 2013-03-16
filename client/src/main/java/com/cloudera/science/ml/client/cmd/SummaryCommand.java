@@ -15,6 +15,7 @@
 package com.cloudera.science.ml.client.cmd;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.crunch.PCollection;
@@ -27,11 +28,14 @@ import com.beust.jcommander.ParametersDelegate;
 import com.beust.jcommander.converters.CommaParameterSplitter;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
+import com.cloudera.science.ml.client.params.Specs;
 import com.cloudera.science.ml.client.params.SummaryParameters;
+import com.cloudera.science.ml.core.records.BasicSpec;
+import com.cloudera.science.ml.core.records.DataType;
 import com.cloudera.science.ml.core.records.Record;
-import com.cloudera.science.ml.parallel.normalize.Header;
-import com.cloudera.science.ml.parallel.normalize.Summarizer;
-import com.cloudera.science.ml.parallel.normalize.Summary;
+import com.cloudera.science.ml.core.records.Spec;
+import com.cloudera.science.ml.parallel.summary.Summarizer;
+import com.cloudera.science.ml.parallel.summary.Summary;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -80,29 +84,29 @@ public class SummaryCommand implements Command {
     Pipeline p = pipelineParams.create(SummaryCommand.class, conf);
     PCollection<Record> records = inputParams.getRecords(p);
 
-    Header header = null;
+    Spec spec = null;
     if (headerFile != null) {
-      header = new Header(Files.readFirstLine(new File(headerFile), Charsets.UTF_8),
-          inputParams.getDelimiter());
-    } else {
-      header = new Header();
+      String line = Files.readFirstLine(new File(headerFile), Charsets.UTF_8);
+      spec = new BasicSpec(DataType.STRING,
+          Arrays.asList(line.split(inputParams.getDelimiter())));
     }
+    
     boolean defaultToSymbolic = false;
     List<Integer> exceptionColumns = null;
     if (!symbolicColumns.isEmpty()) {
-      exceptionColumns = header.getFieldIds(symbolicColumns);
+      exceptionColumns = Specs.getFieldIds(spec, symbolicColumns);
     } else {
       defaultToSymbolic = true;
-      exceptionColumns = header.getFieldIds(numericColumns);
+      exceptionColumns = Specs.getFieldIds(spec, numericColumns);
     }
-    List<Integer> intIgnoredColumns = header.getFieldIds(ignoredColumns);
+    List<Integer> intIgnoredColumns = Specs.getFieldIds(spec, ignoredColumns);
     
     Summarizer summarizer = new Summarizer()
-        .header(header)
+        .spec(spec)
         .defaultToSymbolic(defaultToSymbolic)
         .exceptionColumns(exceptionColumns)
         .ignoreColumns(intIgnoredColumns)
-        .ignoreColumns(header.getFieldId(idColumn));
+        .ignoreColumns(Specs.getFieldId(spec, idColumn));
     Summary summary = summarizer.build(records).getValue();
     summaryParams.save(summary, summaryFile);
 

@@ -30,12 +30,13 @@ import com.beust.jcommander.converters.CommaParameterSplitter;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.OutputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
+import com.cloudera.science.ml.client.params.Specs;
 import com.cloudera.science.ml.client.params.SummaryParameters;
 import com.cloudera.science.ml.core.records.Record;
-import com.cloudera.science.ml.parallel.normalize.Header;
+import com.cloudera.science.ml.core.records.Spec;
 import com.cloudera.science.ml.parallel.normalize.Normalizer;
-import com.cloudera.science.ml.parallel.normalize.Summary;
 import com.cloudera.science.ml.parallel.normalize.Transform;
+import com.cloudera.science.ml.parallel.summary.Summary;
 import com.google.common.collect.Lists;
 
 /**
@@ -92,20 +93,20 @@ public class NormalizeCommand implements Command {
     PCollection<Record> records = inputParams.getRecords(p);
 
     Summary summary = null;
-    Header header = null;
+    Spec spec = null;
     if (summaryFile != null) {
       summary = summaryParams.get(summaryFile);
-      header = summary.getHeader();
+      spec = summary.getSpec();
     } else {
-      header = new Header();
+      spec = null;
     }
     
     Normalizer normalizer = Normalizer.builder()
         .summary(summary)
         .sparse(sparse)
         .defaultTransform(getDefaultTransform())
-        .ignoreColumns(header.getFieldIds(ignoredColumns))
-        .idColumn(header.getFieldId(idColumn))
+        .ignoreColumns(Specs.getFieldIds(spec, ignoredColumns))
+        .idColumn(Specs.getFieldId(spec, idColumn))
         .build();
     
     PType<Vector> vecPType = outputParams.getVectorPType();

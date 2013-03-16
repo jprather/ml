@@ -14,13 +14,14 @@
  */
 package com.cloudera.science.ml.core.records;
 
+import java.io.Serializable;
 import java.util.List;
 
 
 /**
  *
  */
-public interface Spec {
+public interface Spec extends Serializable {
   DataType getDataType();
   
   int size();

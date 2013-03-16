@@ -16,14 +16,21 @@ package com.cloudera.science.ml.parallel.types;
 
 import java.util.List;
 
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.Spec;
+import com.cloudera.science.ml.core.records.avro.AvroRecord;
+import com.cloudera.science.ml.core.records.avro.Spec2Schema;
 import com.cloudera.science.ml.core.records.csv.CSVRecord;
 import com.cloudera.science.ml.core.records.vectors.VectorRecord;
+import com.cloudera.science.ml.core.vectors.Vectors;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
@@ -32,6 +39,32 @@ import com.google.common.collect.Lists;
  */
 public class MLRecords {
   
+  public static PType<Record> record(Spec spec) {
+    final Schema schema = Spec2Schema.create(spec);
+    return Avros.derived(Record.class,
+        new MapFn<GenericData.Record, Record>() {
+          @Override
+          public Record map(GenericData.Record gdr) {
+            return new AvroRecord(gdr);
+          }
+        },
+        new MapFn<Record, GenericData.Record>() {
+          @Override
+          public GenericData.Record map(Record r) {
+            if (r instanceof AvroRecord) {
+              return ((AvroRecord) r).getImpl();
+            } else {
+              GenericData.Record gdr = new GenericData.Record(schema);
+              for (int i = 0; i < r.getSpec().size(); i++) {
+                gdr.put(i, r.get(i));
+              }
+              return gdr;
+            }
+          }
+        },
+        Avros.generics(schema));
+  }
+  
   public static PType<Record> csvRecord(PTypeFamily ptf, String delim) {
     return ptf.derived(Record.class,
         new CSV2RecordMapFn(delim),
@@ -39,20 +72,42 @@ public class MLRecords {
         ptf.strings());
   }
   
-  public static <V extends Vector> PType<Record> vectorRecord(PType<V> ptype) {
+  public static PType<Record> vectorRecord(PType<Vector> ptype) {
+    return vectorRecord(ptype, false);
+  }
+  
+  public static PType<Record> vectorRecord(PType<Vector> ptype, boolean sparse) {
     return ptype.getFamily().derived(Record.class,
-        new MapFn<V, Record>() {
+        new MapFn<Vector, Record>() {
           @Override
-          public Record map(V v) {
+          public Record map(Vector v) {
             return new VectorRecord(v);
           }
         },
-        new MapFn<Record, V>() {
-          @Override
-          public V map(Record r) {
-            return (V) ((VectorRecord) r).getVector();
-          }   
-        }, ptype);
+        new Record2VectorFn(sparse),
+        ptype);
+  }
+  
+  private static class Record2VectorFn extends MapFn<Record, Vector> {
+    private boolean sparse;
+    
+    public Record2VectorFn(boolean sparse) {
+      this.sparse = sparse;
+    }
+    
+    @Override
+    public Vector map(Record r) {
+      if (r instanceof VectorRecord) {
+        return ((VectorRecord) r).getVector();
+      } else {
+        int sz = r.getSpec().size();
+        Vector v = sparse ? Vectors.sparse(sz) : Vectors.dense(sz);
+        for (int i = 0; i < sz; i++) {
+          v.setQuick(i, r.getAsDouble(i));
+        }
+        return v;
+      }
+    }
   }
   
   private static class CSV2RecordMapFn extends MapFn<String, Record> {

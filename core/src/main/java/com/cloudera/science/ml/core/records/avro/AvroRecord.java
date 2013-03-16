@@ -48,6 +48,11 @@ public class AvroRecord implements Record {
   }
 
   @Override
+  public Object get(int index) {
+    return impl.get(index);
+  }
+  
+  @Override
   public Boolean getBoolean(int index) {
     return (Boolean) impl.get(index);
   }

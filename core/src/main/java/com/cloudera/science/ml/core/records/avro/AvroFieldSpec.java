@@ -24,25 +24,34 @@ import com.cloudera.science.ml.core.records.Spec;
  */
 public class AvroFieldSpec implements FieldSpec {
 
-  private Schema.Field field;
+  private final String name;
+  private final int position;
+  private final String schemaJson;
+  private transient Schema schema;
   
   public AvroFieldSpec(Schema.Field field) {
-    this.field = field;
+    this.name = field.name();
+    this.position = field.pos();
+    this.schema = field.schema();
+    this.schemaJson = schema.toString();
   }
   
   @Override
   public String name() {
-    return field.name();
+    return name;
   }
 
   @Override
   public int position() {
-    return field.pos();
+    return position;
   }
 
   @Override
   public Spec spec() {
-    return new AvroSpec(field.schema());
+    if (schema == null) {
+      schema = (new Schema.Parser()).parse(schemaJson);
+    }
+    return new AvroSpec(schema);
   }
 
 }

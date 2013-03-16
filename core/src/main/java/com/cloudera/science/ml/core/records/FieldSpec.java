@@ -14,11 +14,13 @@
  */
 package com.cloudera.science.ml.core.records;
 
+import java.io.Serializable;
+
 
 /**
  *
  */
-public interface FieldSpec {
+public interface FieldSpec extends Serializable {
   String name();
   
   int position();

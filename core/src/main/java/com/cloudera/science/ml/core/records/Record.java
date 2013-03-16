@@ -22,6 +22,8 @@ public interface Record {
  
   Record copy(boolean deep);
   
+  Object get(int index);
+  
   Boolean getBoolean(int index);
 
   Boolean getBoolean(String fieldName);

@@ -17,7 +17,7 @@ package com.cloudera.science.ml.client.params;
 import java.io.File;
 
 import com.beust.jcommander.ParametersDelegate;
-import com.cloudera.science.ml.parallel.normalize.Summary;
+import com.cloudera.science.ml.parallel.summary.Summary;
 
 /**
  *

@@ -30,8 +30,9 @@ import com.google.common.collect.Lists;
  */
 public class AvroSpec implements Spec {
 
-  private final Schema schema;
+  private final String schemaJson;
   private final DataType dataType;
+  private transient Schema schema;
   
   private static DataType getDataType(Schema schema) {
     Schema.Type st = schema.getType();
@@ -57,21 +58,29 @@ public class AvroSpec implements Spec {
   
   public AvroSpec(Schema schema) {
     this.schema = schema;
+    this.schemaJson = schema.toString();
     this.dataType = getDataType(schema);
   }
   
   public Schema getSchema() {
+    if (schema == null) {
+      schema = (new Schema.Parser()).parse(schemaJson);
+    }
     return schema;
   }
 
+  private List<Schema.Field> getFields() {
+    return getSchema().getFields();
+  }
+  
   @Override
   public int size() {
-    return schema.getFields().size();
+    return getFields().size();
   }
 
   @Override
   public List<String> getFieldNames() {
-    return Lists.transform(schema.getFields(), new Function<Schema.Field, String>() {
+    return Lists.transform(getFields(), new Function<Schema.Field, String>() {
       @Override
       public String apply(Field input) {
         return input.name();
@@ -86,11 +95,11 @@ public class AvroSpec implements Spec {
 
   @Override
   public FieldSpec getField(String fieldName) {
-    return new AvroFieldSpec(schema.getField(fieldName));
+    return new AvroFieldSpec(getSchema().getField(fieldName));
   }
 
   @Override
   public FieldSpec getField(int index) {
-    return new AvroFieldSpec(schema.getFields().get(index));
+    return new AvroFieldSpec(getFields().get(index));
   }
 }

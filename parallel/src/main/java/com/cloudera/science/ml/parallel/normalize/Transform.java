@@ -16,6 +16,8 @@ package com.cloudera.science.ml.parallel.normalize;
 
 import java.io.Serializable;
 
+import com.cloudera.science.ml.parallel.summary.SummaryStats;
+
 /**
  *
  */

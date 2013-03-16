@@ -12,7 +12,7 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.science.ml.parallel.normalize;
+package com.cloudera.science.ml.parallel.summary;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -28,6 +28,7 @@ import org.apache.crunch.materialize.pobject.PObjectImpl;
 import org.apache.crunch.types.avro.Avros;
 
 import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.Spec;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -39,12 +40,12 @@ public class Summarizer {
   private Set<Integer> ignoredColumns = Sets.newHashSet();
   private boolean defaultToSymbolic = false;
   private Set<Integer> exceptionColumns = Sets.newHashSet();
-  private Header header = new Header();
+  private Spec spec = null;
   
   public Summarizer() { }
   
-  public Summarizer header(Header header) {
-    this.header = header;
+  public Summarizer spec(Spec spec) {
+    this.spec = spec;
     return this;
   }
   
@@ -76,7 +77,7 @@ public class Summarizer {
   }
 
   public PObject<Summary> build(PCollection<Record> input) {
-    return new SummaryPObject(header, input.parallelDo("summarize",
+    return new SummaryPObject(spec, input.parallelDo("summarize",
         new SummarizeFn(ignoredColumns, defaultToSymbolic, exceptionColumns),
         Avros.tableOf(Avros.ints(), Avros.pairs(Avros.longs(), Avros.reflects(SummaryStats.class))))
         .groupByKey(1)
@@ -84,11 +85,11 @@ public class Summarizer {
   }
 
   private static class SummaryPObject extends PObjectImpl<Pair<Integer, Pair<Long, SummaryStats>>, Summary> {
-    private final Header header;
+    private final Spec spec;
     
-    public SummaryPObject(Header header, PCollection<Pair<Integer, Pair<Long, SummaryStats>>> pc) {
+    public SummaryPObject(Spec spec, PCollection<Pair<Integer, Pair<Long, SummaryStats>>> pc) {
       super(pc);
-      this.header = header;
+      this.spec = spec;
     }
     
     @Override
@@ -101,7 +102,7 @@ public class Summarizer {
         recordCount = p.second().first();
         ss.put(p.first(), p.second().second());
       }
-      return new Summary(header, recordCount, fieldCount, ss);
+      return new Summary(spec, recordCount, fieldCount, ss);
     }
   }
 
