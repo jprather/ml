@@ -97,8 +97,6 @@ public class NormalizeCommand implements Command {
     if (summaryFile != null) {
       summary = summaryParams.get(summaryFile);
       spec = summary.getSpec();
-    } else {
-      spec = null;
     }
     
     Normalizer normalizer = Normalizer.builder()

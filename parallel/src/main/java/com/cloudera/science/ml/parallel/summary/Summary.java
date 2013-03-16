@@ -15,9 +15,15 @@
 package com.cloudera.science.ml.parallel.summary;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 
+import com.cloudera.science.ml.core.records.BasicSpec;
+import com.cloudera.science.ml.core.records.DataType;
 import com.cloudera.science.ml.core.records.Spec;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
@@ -25,30 +31,48 @@ import com.google.common.collect.Maps;
  */
 public class Summary implements Serializable {
 
-  private Map<Integer, SummaryStats> stats = Maps.newTreeMap();
-  private Spec spec;
+  private SortedMap<Integer, SummaryStats> stats = Maps.newTreeMap();
   private long recordCount;
   private int fieldCount;
   
   public Summary() {}
   
   public Summary(Spec spec, long recordCount, int fieldCount, Map<Integer, SummaryStats> stats) {
-    this.spec = spec;
     this.recordCount = recordCount;
     this.fieldCount = fieldCount;
-    for (Map.Entry<Integer, SummaryStats> e : stats.entrySet()) {
-      if (spec != null) {
-        String fieldName = spec.getField(e.getKey()).name();
-        if (fieldName != null) {
-          e.getValue().setFieldName(fieldName);
+    if (spec != null) {
+      for (int i = 0; i < spec.size(); i++) {
+        SummaryStats ss = stats.get(i);
+        if (ss == null) {
+          ss = new SummaryStats();
         }
+        ss.setFieldName(spec.getField(i).name());
+        this.stats.put(i, ss);
       }
-      this.stats.put(e.getKey(), e.getValue());
+    } else {
+      for (Map.Entry<Integer, SummaryStats> e : stats.entrySet()) {
+        this.stats.put(e.getKey(), e.getValue());
+      }
     }
   }
   
   public Spec getSpec() {
-    return spec;
+    int maxId = stats.lastKey();
+    List<String> fields = Arrays.asList(new String[maxId + 1]);
+    for (int i = 0; i <= maxId; i++) {
+      SummaryStats ss = stats.get(i);
+      if (ss != null) {
+        String field = ss.getFieldName();
+        if (field == null) {
+          fields.set(i, "c" + i);
+        } else {
+          fields.set(i, field);
+        }
+      } else {
+        fields.set(i, "c" + i);
+      }
+    }
+    return new BasicSpec(DataType.STRING, fields);
   }
   
   public Map<Integer, SummaryStats> getAllStats() {

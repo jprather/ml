@@ -16,6 +16,7 @@ package com.cloudera.science.ml.client.params;
 
 import java.util.List;
 
+import com.cloudera.science.ml.core.records.FieldSpec;
 import com.cloudera.science.ml.core.records.Spec;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -31,6 +32,10 @@ public class Specs {
   }
   
   public static List<Integer> getFieldIds(Spec spec, List<String> values) {
+    if (values.isEmpty()) {
+      return ImmutableList.of();
+    }
+    
     List<Integer> fieldIds = null;
     if (spec == null || spec.getField(values.get(0)) == null) {
       fieldIds = Lists.transform(values, new Function<String, Integer>() {
@@ -40,9 +45,12 @@ public class Specs {
         }
       });
     } else {
-      fieldIds = Lists.newArrayListWithExpectedSize(spec.size());
-      for (int i = 0; i < spec.size(); i++) {
-        fieldIds.add(spec.getField(values.get(i)).position());
+      fieldIds = Lists.newArrayListWithExpectedSize(values.size());
+      for (int i = 0; i < values.size(); i++) {
+        FieldSpec f = spec.getField(values.get(i));
+        if (f != null) {
+          fieldIds.add(f.position());
+        }
       }
     }
     return fieldIds;
