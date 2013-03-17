@@ -24,6 +24,7 @@ import org.apache.hadoop.util.ToolRunner;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.cloudera.science.ml.client.cmd.Command;
+import com.cloudera.science.ml.client.cmd.KMeansAssignmentCommand;
 import com.cloudera.science.ml.client.cmd.KMeansCommand;
 import com.cloudera.science.ml.client.cmd.KMeansSketchCommand;
 import com.cloudera.science.ml.client.cmd.NormalizeCommand;
@@ -40,6 +41,7 @@ public class Main extends Configured implements Tool {
       .put("sample", new SampleCommand())
       .put("summary", new SummaryCommand())
       .put("normalize", new NormalizeCommand())
+      .put("kassign", new KMeansAssignmentCommand())
       .put("ksketch", new KMeansSketchCommand())
       .put("kmeans", new KMeansCommand())
       .build();

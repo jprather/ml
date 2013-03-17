@@ -95,7 +95,7 @@ public class KMeansCommand implements Command {
         new File(centersOutputFile));
     
     if (sketches.size() > 1) {
-      // Perform the prediction strength calculations
+      // Perform the prediction strength calculations on the folds
       List<Weighted<Vector>> train = Lists.newArrayList();
       for (int i = 0; i < sketches.size() - 1; i++) {
         train.addAll(sketches.get(i));

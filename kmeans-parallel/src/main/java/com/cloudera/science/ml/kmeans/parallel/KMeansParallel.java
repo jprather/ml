@@ -247,7 +247,7 @@ public class KMeansParallel {
       Distances d = centers.getDistances(vec);
       for (int i = 0; i < d.closestPoints.length; i++) {
         emitter.emit(MLClusterAssignment.newBuilder()
-            .setId("foo")
+            .setId(mlvec.getId())
             .setClusteringId(i)
             .setClosestCenterId(d.closestPoints[i])
             .setDistance(d.clusterDistances[i])
