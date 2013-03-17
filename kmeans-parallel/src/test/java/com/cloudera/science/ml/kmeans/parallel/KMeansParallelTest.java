@@ -65,10 +65,10 @@ public class KMeansParallelTest {
   
   @Test
   public void testBasic() throws Exception {
-    Vector initialPoint = Vectors.of(1.0, 1.0);
+    List<Vector> initialPoints = ImmutableList.of(Vectors.of(1.0, 1.0));
     KMeans km = new KMeans();
     
-    List<List<Weighted<Vector>>> points = kmp.initialization(vecs, 5, 4, initialPoint,
+    List<List<Weighted<Vector>>> points = kmp.initialization(vecs, 5, 4, initialPoints,
         new Crossfold(2, 1729L));
     List<Centers> centers = Lists.newArrayList();
     List<Weighted<Vector>> allPoints = Lists.newArrayList(points.get(0));

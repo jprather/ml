@@ -30,11 +30,17 @@ import com.google.common.base.Preconditions;
  * cross-validations.
  */
 public class Crossfold implements Serializable {
+  /**
+   * The default seed allows us to partition an identical dataset the
+   * same way on every pass over it, even from different Crunch jobs.
+   */
+  public static final long DEFAULT_SEED = 1729L;
+  
   private int numFolds;
   private long seed;
   
   public Crossfold(int numFolds) {
-    this(numFolds, System.currentTimeMillis());
+    this(numFolds, DEFAULT_SEED);
   }
   
   public Crossfold(int numFolds, long seed) {

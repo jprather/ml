@@ -28,9 +28,6 @@ import com.cloudera.science.ml.client.params.OutputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
 import com.cloudera.science.ml.parallel.sample.ReservoirSampling;
 
-/**
- *
- */
 @Parameters(commandDescription = "Samples from a dataset and writes the sampled data to HDFS or a local file")
 public class SampleCommand implements Command {
 

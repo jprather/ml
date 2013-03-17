@@ -18,12 +18,14 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
+
+import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.core.records.BasicSpec;
 import com.cloudera.science.ml.core.records.DataType;
 import com.cloudera.science.ml.core.records.Spec;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
@@ -73,6 +75,13 @@ public class Summary implements Serializable {
       }
     }
     return new BasicSpec(DataType.STRING, fields);
+  }
+  
+  public Vector getRandom(Random r) {
+    if (r == null) {
+      r = new Random();
+    }
+    return null;
   }
   
   public Map<Integer, SummaryStats> getAllStats() {

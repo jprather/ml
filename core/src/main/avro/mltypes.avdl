@@ -27,15 +27,19 @@ protocol ML {
 
   record MLWeightedVector {
     MLVector vec;
-    double weight;
+    double weight = 1.0;
   }
 
   record MLCenters {
     array<MLVector> centers;
   }
 
+  record MLWeightedCenters {
+    array<MLWeightedVector> centers;
+  }
+
   record MLClusterAssignment {
-    MLVector vec;
+    string id;
     int clustering_id;
     int closest_center_id;
     double distance;

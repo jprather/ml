@@ -39,9 +39,6 @@ import com.cloudera.science.ml.parallel.normalize.Transform;
 import com.cloudera.science.ml.parallel.summary.Summary;
 import com.google.common.collect.Lists;
 
-/**
- *
- */
 @Parameters(commandDescription = "Prepare input (CSV or Vectors) for k-means runs")
 public class NormalizeCommand implements Command {
 

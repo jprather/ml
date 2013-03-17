@@ -48,6 +48,7 @@ import com.cloudera.science.ml.parallel.pobject.ListOfListsPObject;
 import com.cloudera.science.ml.parallel.pobject.ListPObject;
 import com.cloudera.science.ml.parallel.sample.ReservoirSampling;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 /**
  * <p>An implementation of the k-means|| algorithm, as described in
@@ -145,8 +146,8 @@ public class KMeansParallel {
   
   public <V extends Vector> List<Weighted<Vector>> initialization(
       PCollection<V> vecs, int numIterations, int samplesPerIteration,
-      Vector initialPoint) {
-    return initialization(vecs, numIterations, samplesPerIteration, initialPoint,
+      List<Vector> initialPoints) {
+    return initialization(vecs, numIterations, samplesPerIteration, initialPoints,
         new Crossfold(1)).get(0);
   }
   
@@ -159,12 +160,18 @@ public class KMeansParallel {
    */
   public <V extends Vector> List<List<Weighted<Vector>>> initialization(
       PCollection<V> vecs, int numIterations, int samplesPerIteration,
-      Vector initialPoint, Crossfold crossfold) {
-    CentersIndex centers = new CentersIndex(crossfold.getNumFolds());
+      List<Vector> initialPoints, Crossfold crossfold) {
+
     int[] lValues = new int[crossfold.getNumFolds()];
+    List<Integer> foldIds = Lists.newArrayList();
     for (int i = 0; i < crossfold.getNumFolds(); i++) {
-      centers.add(Vectors.toArray(initialPoint), i);
       lValues[i] = samplesPerIteration;
+      foldIds.add(i);
+    }
+    
+    CentersIndex centers = new CentersIndex(crossfold.getNumFolds());
+    for (int i = 0; i < initialPoints.size(); i++) {
+      centers.add(Vectors.toArray(initialPoints.get(i)), foldIds);
     }
     
     PType<V> ptype = vecs.getPType();
@@ -240,7 +247,7 @@ public class KMeansParallel {
       Distances d = centers.getDistances(vec);
       for (int i = 0; i < d.closestPoints.length; i++) {
         emitter.emit(MLClusterAssignment.newBuilder()
-            .setVec(mlvec)
+            .setId("foo")
             .setClusteringId(i)
             .setClosestCenterId(d.closestPoints[i])
             .setDistance(d.clusterDistances[i])

@@ -15,16 +15,9 @@
 package com.cloudera.science.ml.client.cmd;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.specific.SpecificDatumWriter;
-import org.apache.crunch.PCollection;
-import org.apache.crunch.Pipeline;
-import org.apache.crunch.Target.WriteMode;
-import org.apache.crunch.io.To;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mahout.math.Vector;
 
@@ -34,138 +27,107 @@ import com.beust.jcommander.ParametersDelegate;
 import com.beust.jcommander.converters.CommaParameterSplitter;
 import com.beust.jcommander.converters.IntegerConverter;
 import com.cloudera.science.ml.avro.MLCenters;
-import com.cloudera.science.ml.client.params.InputParameters;
-import com.cloudera.science.ml.client.params.PipelineParameters;
+import com.cloudera.science.ml.avro.MLWeightedCenters;
 import com.cloudera.science.ml.client.params.RandomParameters;
+import com.cloudera.science.ml.client.util.AvroIO;
 import com.cloudera.science.ml.core.vectors.Centers;
 import com.cloudera.science.ml.core.vectors.VectorConvert;
 import com.cloudera.science.ml.core.vectors.Weighted;
 import com.cloudera.science.ml.kmeans.core.KMeans;
 import com.cloudera.science.ml.kmeans.core.KMeansInitStrategy;
+import com.cloudera.science.ml.kmeans.core.PredictionStrength;
 import com.cloudera.science.ml.kmeans.core.StoppingCriteria;
-import com.cloudera.science.ml.kmeans.parallel.KMeansParallel;
 import com.google.common.collect.Lists;
 
-/**
- *
- */
-@Parameters(commandDescription = "Executes k-means++ and scalable k-means++ (a.k.a. k-means||)")
+@Parameters(commandDescription = "Executes k-means++ on Avro vectors stored on the local filesystem")
 public class KMeansCommand implements Command {
 
+  @Parameter(names = "--input-sketches", required=true,
+      description = "The local Avro file that contains the sketches computed by the ksketch command")
+  private String sketchFile;
+  
   @Parameter(names = "--clusters",
       description = "A CSV of ints that specifies the number of clusters to create",
       required = true,
       converter = IntegerConverter.class,
       splitter = CommaParameterSplitter.class)
-  List<Integer> numClusters = Lists.newArrayList();
+  List<Integer> clusters = Lists.newArrayList();
 
-  @Parameter(names = "--init-vectors-file", required=true,
-      description = "The file that contains the vector(s) used for initializing k-means||")
-  private String initVectorsPath;
-  
-  @Parameter(names = "--iterations",
-      description = "The number of iterations of k-means|| to run")
-  private int numIterations = 5;
-  
-  @Parameter(names = "--scale-factor",
-      description = "The scale factor to use for sampling points in k-means||")
-  private int scaleFactor = 2;
-  
   @Parameter(names = "--init-strategy",
       description = "The k-means initialization strategy (PLUS_PLUS or RANDOM)")
   private String initStrategyName = KMeansInitStrategy.PLUS_PLUS.name();
-  
-  @Parameter(names = "--clusters-output",
-      description = "Save the clusters that were found to this local Avro file",
-      required = true)
-  private String saveClustersTo;
-  
-  @Parameter(names = "--assignments-output",
-      description = "Saves the cluster assignments of the points to an Avro file in HDFS")
-  private String clusterAssignmentsOutput;
-  
-  @ParametersDelegate
-  private PipelineParameters pipelineParams = new PipelineParameters();
-  
-  @ParametersDelegate
-  private InputParameters inputParams = new InputParameters();
 
+  @Parameter(names = "--max-iterations",
+      description = "The maximum number of Lloyd's iterations to run")
+  private int maxLloydsIterations = 100;  
+
+  @Parameter(names = "--stopping-threshold",
+      description = "Stop the Lloyd's iterations if the delta between centers falls below this")
+  private double stoppingThreshold = 1e-4;  
+
+  @Parameter(names = "--output-centers",
+      description = "A local file to store the centers that were created into")
+  private String centersOutputFile;
+  
   @ParametersDelegate
   private RandomParameters randomParams = new RandomParameters();
 
-  // Parameters that are left outside of the user's control for now
-  private int maxLloydsIterations = 100;  
-  private double stoppingThreshold = 1e-4;
-  
   @Override
   public String getDescription() {
-    return "Executes k-means++ and scalable k-means++ (a.k.a. k-means||)";
+    return "Executes k-means++ on Avro vectors stored on the local filesystem";
   }
   
   @Override
   public int execute(Configuration conf) throws Exception {
-    Pipeline p = pipelineParams.create(KMeansCommand.class, conf);
-    PCollection<Vector> input = inputParams.getVectors(p);
-
-    KMeansParallel kmp = new KMeansParallel(randomParams.getRandom());
     KMeansInitStrategy initStrategy = KMeansInitStrategy.valueOf(initStrategyName);
-    Vector initialPoint = getInitialVector(p);
-    StoppingCriteria stoppingCriteria = getStoppingCriteria();
-    KMeans kmeans = new KMeans(initStrategy, stoppingCriteria);
-    Integer maxClusters = Collections.max(numClusters);
+    KMeans kmeans = new KMeans(initStrategy, getStoppingCriteria());
+    Random rand = randomParams.getRandom();
     
-    List<Weighted<Vector>> sketch = kmp.initialization(input,
-        numIterations, maxClusters * scaleFactor, initialPoint);
-    List<Centers> centers = Lists.newArrayList();
-    for (Integer nc : numClusters) {
-      centers.add(kmeans.compute(sketch, nc, randomParams.getRandom()));
+    List<MLWeightedCenters> mlwc = AvroIO.read(MLWeightedCenters.class, new File(sketchFile));
+    List<List<Weighted<Vector>>> sketches = toSketches(mlwc);
+    List<Weighted<Vector>> allPoints = Lists.newArrayList();
+    for (int i = 0; i < sketches.size(); i++) {
+      allPoints.addAll(sketches.get(i));
     }
-    List<Double> clusteringCosts = kmp.getCosts(input, centers).getValue();
-    for (int i = 0; i < clusteringCosts.size(); i++) {
-      System.out.println(String.format("Cost of using %d clusters = %.4f",
-          numClusters.get(i), clusteringCosts.get(i)));
-    }
-    // Save the centers to a local file
-    saveCentersToFile(centers);
+    List<Centers> centers = getClusters(allPoints, kmeans, rand);
+    AvroIO.write(Lists.transform(centers, VectorConvert.FROM_CENTERS),
+        new File(centersOutputFile));
     
-    // Optionally write out the assignments of points to clusters
-    if (clusterAssignmentsOutput != null) {
-      kmp.computeClusterAssignments(input, centers).write(
-          To.avroFile(clusterAssignmentsOutput),WriteMode.OVERWRITE);
+    if (sketches.size() > 1) {
+      // Perform the prediction strength calculations
+      List<Weighted<Vector>> train = Lists.newArrayList();
+      for (int i = 0; i < sketches.size() - 1; i++) {
+        train.addAll(sketches.get(i));
+      }
+      List<Weighted<Vector>> test = sketches.get(sketches.size() - 1);
+      List<Centers> trainCenters = getClusters(train, kmeans, rand);
+      List<Centers> testCenters = getClusters(test, kmeans, rand);
+      PredictionStrength ps = new PredictionStrength(testCenters, test, trainCenters);
+      List<Double> psScores = ps.computeScores();
+      System.out.println("Prediction Strengths");
+      for (int i = 0; i < psScores.size(); i++) {
+        System.out.println(String.format("%d Clusters: %.6f",
+            trainCenters.get(i).size(), psScores.get(i)));
+      }
     }
     
-    p.done();
     return 0;
   }
   
-  private Vector getInitialVector(Pipeline pipeline) {
-    PCollection<Vector> initVectors = inputParams.getVectorsFromPath(pipeline, initVectorsPath);
-    Vector ret = null;
-    Random r = new Random();
-    double prob = 1.0;
-    int count = 1;
-    for (Vector v : initVectors.materialize()) {
-      if (r.nextDouble() < prob) {
-        ret = v;
-      }
-      count++;
-      prob = 1.0 / count;
+  private List<Centers> getClusters(List<Weighted<Vector>> sketch, KMeans kmeans, Random rand) {
+    List<Centers> centers = Lists.newArrayList();
+    for (Integer nc : clusters) {
+      centers.add(kmeans.compute(sketch, nc, rand));
     }
-    if (ret == null) {
-      throw new IllegalArgumentException("No vectors read from: " + initVectorsPath);
-    }
-    return ret;
+    return centers;
   }
   
-  private void saveCentersToFile(List<Centers> centers) throws Exception {
-    // Should consider adding a text option here
-    SpecificDatumWriter<MLCenters> sdw = new SpecificDatumWriter<MLCenters>(MLCenters.class);
-    DataFileWriter<MLCenters> dfw = new DataFileWriter<MLCenters>(sdw);
-    dfw.create(MLCenters.SCHEMA$, new File(saveClustersTo));
-    for (MLCenters mlc : Lists.transform(centers, VectorConvert.FROM_CENTERS)) {
-      dfw.append(mlc);
+  private List<List<Weighted<Vector>>> toSketches(List<MLWeightedCenters> mlwc) {
+    List<List<Weighted<Vector>>> base = Lists.newArrayList();
+    for (MLWeightedCenters wc : mlwc) {
+      base.add(Lists.transform(wc.getCenters(), VectorConvert.TO_WEIGHTED_VEC));
     }
-    dfw.close();
+    return base;
   }
   
   private StoppingCriteria getStoppingCriteria() {
