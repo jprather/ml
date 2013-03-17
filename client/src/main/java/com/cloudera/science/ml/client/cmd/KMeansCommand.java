@@ -16,7 +16,6 @@ package com.cloudera.science.ml.client.cmd;
 
 import java.io.File;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mahout.math.Vector;
@@ -24,9 +23,6 @@ import org.apache.mahout.math.Vector;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.beust.jcommander.converters.CommaParameterSplitter;
-import com.beust.jcommander.converters.IntegerConverter;
-import com.cloudera.science.ml.avro.MLCenters;
 import com.cloudera.science.ml.avro.MLWeightedCenters;
 import com.cloudera.science.ml.client.params.RandomParameters;
 import com.cloudera.science.ml.client.util.AvroIO;
@@ -35,7 +31,7 @@ import com.cloudera.science.ml.core.vectors.VectorConvert;
 import com.cloudera.science.ml.core.vectors.Weighted;
 import com.cloudera.science.ml.kmeans.core.KMeans;
 import com.cloudera.science.ml.kmeans.core.KMeansInitStrategy;
-import com.cloudera.science.ml.kmeans.core.PredictionStrength;
+import com.cloudera.science.ml.kmeans.core.KMeansEvaluation;
 import com.cloudera.science.ml.kmeans.core.StoppingCriteria;
 import com.google.common.collect.Lists;
 
@@ -45,14 +41,20 @@ public class KMeansCommand implements Command {
   @Parameter(names = "--input-sketches", required=true,
       description = "The local Avro file that contains the sketches computed by the ksketch command")
   private String sketchFile;
-  
-  @Parameter(names = "--clusters",
-      description = "A CSV of ints that specifies the number of clusters to create",
-      required = true,
-      converter = IntegerConverter.class,
-      splitter = CommaParameterSplitter.class)
-  List<Integer> clusters = Lists.newArrayList();
 
+  @Parameter(names = "--min-clusters",
+      description = "The minimum number of clusters to create")
+  private int minClusters = 1;
+  
+  @Parameter(names = "--max-clusters",
+      required=true,
+      description = "The maximum number of clusters to create")
+  private int maxClusters;
+  
+  @Parameter(names = "--cluster-increment",
+      description = "The step size from --min-clusters to --max-clusters")
+  private int clusterIncrementBy = 1;
+  
   @Parameter(names = "--init-strategy",
       description = "The k-means initialization strategy (PLUS_PLUS or RANDOM)")
   private String initStrategyName = KMeansInitStrategy.PLUS_PLUS.name();
@@ -81,7 +83,6 @@ public class KMeansCommand implements Command {
   public int execute(Configuration conf) throws Exception {
     KMeansInitStrategy initStrategy = KMeansInitStrategy.valueOf(initStrategyName);
     KMeans kmeans = new KMeans(initStrategy, getStoppingCriteria());
-    Random rand = randomParams.getRandom();
     
     List<MLWeightedCenters> mlwc = AvroIO.read(MLWeightedCenters.class, new File(sketchFile));
     List<List<Weighted<Vector>>> sketches = toSketches(mlwc);
@@ -89,7 +90,7 @@ public class KMeansCommand implements Command {
     for (int i = 0; i < sketches.size(); i++) {
       allPoints.addAll(sketches.get(i));
     }
-    List<Centers> centers = getClusters(allPoints, kmeans, rand);
+    List<Centers> centers = getClusters(allPoints, kmeans);
     AvroIO.write(Lists.transform(centers, VectorConvert.FROM_CENTERS),
         new File(centersOutputFile));
     
@@ -100,24 +101,24 @@ public class KMeansCommand implements Command {
         train.addAll(sketches.get(i));
       }
       List<Weighted<Vector>> test = sketches.get(sketches.size() - 1);
-      List<Centers> trainCenters = getClusters(train, kmeans, rand);
-      List<Centers> testCenters = getClusters(test, kmeans, rand);
-      PredictionStrength ps = new PredictionStrength(testCenters, test, trainCenters);
-      List<Double> psScores = ps.computeScores();
-      System.out.println("Prediction Strengths");
-      for (int i = 0; i < psScores.size(); i++) {
-        System.out.println(String.format("%d Clusters: %.6f",
-            trainCenters.get(i).size(), psScores.get(i)));
+      List<Centers> trainCenters = getClusters(train, kmeans);
+      List<Centers> testCenters = getClusters(test, kmeans);
+      KMeansEvaluation eval = new KMeansEvaluation(testCenters, test, trainCenters);
+      System.out.println("Cluster,TestCost,TrainCost,PredictionStrength");
+      for (int i = 0; i < trainCenters.size(); i++) {
+        System.out.println(String.format("%d,%.4f,%.4f,%.4f",
+            trainCenters.get(i).size(), eval.getTestCenterCosts().get(i),
+            eval.getTrainCosts().get(i), eval.getPredictionStrengths().get(i)));
       }
     }
     
     return 0;
   }
   
-  private List<Centers> getClusters(List<Weighted<Vector>> sketch, KMeans kmeans, Random rand) {
+  private List<Centers> getClusters(List<Weighted<Vector>> sketch, KMeans kmeans) {
     List<Centers> centers = Lists.newArrayList();
-    for (Integer nc : clusters) {
-      centers.add(kmeans.compute(sketch, nc, rand));
+    for (int nc = minClusters; nc <= maxClusters; nc += clusterIncrementBy) {
+      centers.add(kmeans.compute(sketch, nc, randomParams.getRandom()));
     }
     return centers;
   }

@@ -20,6 +20,7 @@ import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.core.vectors.Centers;
 import com.cloudera.science.ml.core.vectors.Weighted;
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 /**
@@ -27,30 +28,67 @@ import com.google.common.collect.Lists;
  * in a dataset overlap between clusters that were created from different subsets
  * of the data.
  */
-public class PredictionStrength {
+public class KMeansEvaluation {
 
   private final List<Centers> testCenters;
   private final List<Weighted<Vector>> testPoints;
   private final List<Centers> trainCenters;
+  private List<Double> predictionStrengths;
+  private List<Double> trainCosts;
+  private List<Double> testCosts;
   
-  public PredictionStrength(List<Centers> testCenters, List<Weighted<Vector>> testPoints,
+  public KMeansEvaluation(List<Centers> testCenters, List<Weighted<Vector>> testPoints,
       List<Centers> trainCenters) {
     this.testCenters = testCenters;
     this.testPoints = testPoints;
     this.trainCenters = trainCenters;
+    init();
   }
   
-  public List<Double> computeScores() {
-    List<Double> scores = Lists.newArrayListWithExpectedSize(testCenters.size());
+  public List<Double> getPredictionStrengths() {
+    return predictionStrengths;
+  }
+  
+  public List<Double> getTestCenterCosts() {
+    return Lists.transform(testCosts, new Function<Double, Double>() {
+      @Override
+      public Double apply(Double input) {
+        return input / testCosts.get(0);
+      }
+    });
+  }
+  
+  public List<Double> getTrainCosts() {
+    return Lists.transform(trainCosts, new Function<Double, Double>() {
+      @Override
+      public Double apply(Double input) {
+        return input / trainCosts.get(0);
+      }
+    });
+  }
+  
+  private void init() {
+    predictionStrengths = Lists.newArrayListWithExpectedSize(testCenters.size());
+    trainCosts = Lists.newArrayListWithExpectedSize(testCenters.size());
+    testCosts = Lists.newArrayListWithExpectedSize(testCenters.size());
+    
     for (int i = 0; i < testCenters.size(); i++) {
       Centers test = testCenters.get(i);
       Centers train = trainCenters.get(i);
+      double trainCost = 0.0, testCost = 0.0;
       double[][] assignments = new double[test.size()][train.size()];
       for (Weighted<Vector> wv : testPoints) {
-        int testId = test.indexOfClosest(wv.thing());
+        double wt = wv.weight();
+        Vector v = wv.thing();
+        int testId = test.indexOfClosest(v);
+        testCost += wt * v.getDistanceSquared(test.get(testId));
         int trainId = train.indexOfClosest(wv.thing());
-        assignments[testId][trainId] += wv.weight();
+        trainCost += wt * v.getDistanceSquared(train.get(trainId));
+        assignments[testId][trainId] += wt;
       }
+      trainCosts.add(trainCost);
+      testCosts.add(testCost);
+      
       double minScore = Double.POSITIVE_INFINITY;
       for (double[] assignment : assignments) {
         double total = 0.0;
@@ -64,8 +102,7 @@ public class PredictionStrength {
           minScore = score;
         }
       }
-      scores.add(minScore);
+      predictionStrengths.add(minScore);
     }
-    return scores;
   }
 }
