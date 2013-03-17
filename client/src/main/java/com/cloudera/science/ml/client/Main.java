@@ -25,6 +25,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.cloudera.science.ml.client.cmd.Command;
 import com.cloudera.science.ml.client.cmd.KMeansCommand;
+import com.cloudera.science.ml.client.cmd.KMeansSketchCommand;
 import com.cloudera.science.ml.client.cmd.NormalizeCommand;
 import com.cloudera.science.ml.client.cmd.SampleCommand;
 import com.cloudera.science.ml.client.cmd.SummaryCommand;
@@ -39,6 +40,7 @@ public class Main extends Configured implements Tool {
       .put("sample", new SampleCommand())
       .put("summary", new SummaryCommand())
       .put("normalize", new NormalizeCommand())
+      .put("ksketch", new KMeansSketchCommand())
       .put("kmeans", new KMeansCommand())
       .build();
   
@@ -67,7 +69,16 @@ public class Main extends Configured implements Tool {
     if (cmd == null) {
       return help.usage(jc, COMMANDS);
     }
-    return cmd.execute(getConf());
+    try {
+      return cmd.execute(getConf());
+    } catch (Exception e) {
+      if (e instanceof IllegalArgumentException) {
+        System.err.println("Error: " + e.getMessage());
+      } else {
+        throw e;
+      }
+      return 1;
+    }
   }
   
   public static void main(String[] args) throws Exception {

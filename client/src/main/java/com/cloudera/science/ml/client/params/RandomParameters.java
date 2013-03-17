@@ -19,7 +19,7 @@ import java.util.Random;
 import com.beust.jcommander.Parameter;
 
 public class RandomParameters {
-  @Parameter(names = "seed",
+  @Parameter(names = "--seed",
       description = "The seed to use for the random number generator, if any")
   private Long seed;
   
