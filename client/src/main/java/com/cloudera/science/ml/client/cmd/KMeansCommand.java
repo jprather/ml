@@ -38,7 +38,7 @@ import com.google.common.collect.Lists;
 @Parameters(commandDescription = "Executes k-means++ on Avro vectors stored on the local filesystem")
 public class KMeansCommand implements Command {
 
-  @Parameter(names = "--input-sketches", required=true,
+  @Parameter(names = "--input-file", required=true,
       description = "The local Avro file that contains the sketches computed by the ksketch command")
   private String sketchFile;
 
@@ -67,7 +67,7 @@ public class KMeansCommand implements Command {
       description = "Stop the Lloyd's iterations if the delta between centers falls below this")
   private double stoppingThreshold = 1e-4;  
 
-  @Parameter(names = "--output-centers",
+  @Parameter(names = "--output-file",
       description = "A local file to store the centers that were created into")
   private String centersOutputFile;
   

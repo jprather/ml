@@ -42,6 +42,7 @@ import org.apache.mahout.math.Vector;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.converters.CommaParameterSplitter;
+import com.cloudera.science.ml.client.cmd.CommandException;
 import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.mahout.types.MLWritables;
 import com.cloudera.science.ml.parallel.normalize.StringSplitFn;
@@ -52,7 +53,7 @@ import com.google.common.collect.Lists;
 
 public class InputParameters {
   
-  @Parameter(names = "--input",
+  @Parameter(names = "--input-paths",
       description = "CSV of the input paths to consider",
       splitter = CommaParameterSplitter.class,
       required = true)
@@ -104,7 +105,7 @@ public class InputParameters {
             }
           });
     } else {
-      throw new IllegalArgumentException("Unknown format: " + format);
+      throw new CommandException("Unknown format: " + format);
     }
   }
   
@@ -157,7 +158,7 @@ public class InputParameters {
         }
       });
     } else {
-      throw new IllegalArgumentException("Unknown format: " + format);
+      throw new CommandException("Unknown format: " + format);
     }
     return ret;
   }
@@ -191,7 +192,7 @@ public class InputParameters {
         }
       });
     } else {
-      throw new IllegalArgumentException("Unknown format: " + format);
+      throw new CommandException("Unknown format: " + format);
     }
     return ret;
   }

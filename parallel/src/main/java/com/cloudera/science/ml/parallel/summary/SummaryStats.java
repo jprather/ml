@@ -31,77 +31,6 @@ import com.google.common.collect.Sets;
 
 public class SummaryStats implements Serializable {
   
-  private static class Entry implements Serializable {
-    public int id;
-    public long count;
-    
-    public Entry() { }
-    
-    public Entry(int id) {
-      this.id = id;
-      this.count = 0;
-    }
-    
-    public Entry inc() {
-      return inc(1L);
-    }
-    
-    public Entry inc(long count) {
-      this.count += count;
-      return this;
-    }
-  }
-  
-  private static class Numeric implements Serializable {
-    private double min;
-    private double max;
-    private double sum;
-    private double sumSq;
-    
-    public double mean(long count) {
-      return sum / count;
-    }
-    
-    public double stdDev(long count) {
-      double m = mean(count);
-      return Math.sqrt(sumSq / count - m * m);
-    }
-    
-    public double range() {
-      return min - max;
-    }
-    
-    public double min() {
-      return min;
-    }
-    
-    public double max() {
-      return max;
-    }
-    
-    public void update(double d) {
-      sum += d;
-      sumSq += d * d;
-      if (d < min) {
-        min = d;
-      }
-      if (d > max) {
-        max = d;
-      }
-    }
-    
-    public void merge(Numeric other) {
-      sum += other.sum;
-      sumSq += other.sumSq;
-      if (other.min < min) {
-        min = other.min;
-      }
-      if (other.max > max) {
-        max = other.max;
-      }
-    }
-  }
-  
   private Numeric numeric;
   private Map<String, Entry> histogram;
   private String name;
@@ -124,17 +53,13 @@ public class SummaryStats implements Serializable {
     }
   };
   
-  public static SummaryStats create(List<String> values) {
-    SummaryStats ss = new SummaryStats();
-    for (int i = 0; i < values.size(); i++) {
-      ss.histogram.put(values.get(i), new Entry(i).inc());
-    }
-    return ss;
-  }
-  
   public SummaryStats() {
     this.numeric = null;
     this.histogram = null;
+  }
+  
+  public boolean isEmpty() {
+    return numeric == null && histogram == null;
   }
   
   private Numeric numeric() {
@@ -238,6 +163,77 @@ public class SummaryStats implements Serializable {
         merged.put(key, newEntry);
       }
       this.histogram = merged;
+    }
+  }
+  
+  private static class Entry implements Serializable {
+    public int id;
+    public long count;
+    
+    public Entry() { }
+    
+    public Entry(int id) {
+      this.id = id;
+      this.count = 0;
+    }
+    
+    public Entry inc() {
+      return inc(1L);
+    }
+    
+    public Entry inc(long count) {
+      this.count += count;
+      return this;
+    }
+  }
+  
+  private static class Numeric implements Serializable {
+    private double min;
+    private double max;
+    private double sum;
+    private double sumSq;
+    
+    public double mean(long count) {
+      return sum / count;
+    }
+    
+    public double stdDev(long count) {
+      double m = mean(count);
+      return Math.sqrt(sumSq / count - m * m);
+    }
+    
+    public double range() {
+      return min - max;
+    }
+    
+    public double min() {
+      return min;
+    }
+    
+    public double max() {
+      return max;
+    }
+    
+    public void update(double d) {
+      sum += d;
+      sumSq += d * d;
+      if (d < min) {
+        min = d;
+      }
+      if (d > max) {
+        max = d;
+      }
+    }
+    
+    public void merge(Numeric other) {
+      sum += other.sum;
+      sumSq += other.sumSq;
+      if (other.min < min) {
+        min = other.min;
+      }
+      if (other.max > max) {
+        max = other.max;
+      }
     }
   }
 }

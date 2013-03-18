@@ -39,7 +39,7 @@ import com.google.common.collect.Lists;
 @Parameters(commandDescription = "Creates a sketch of a large dataset via the k-means|| (scalable k-means++) algorithm")
 public class KMeansSketchCommand implements Command {
 
-  @Parameter(names = "--init-vectors-file",
+  @Parameter(names = "--init-vectors-path",
       description = "The file that contains the vector(s) used for initializing k-means||")
   private String initVectorsPath;
 
@@ -55,7 +55,7 @@ public class KMeansSketchCommand implements Command {
       description = "The The number of sample points to select on each iteration")
   private int samplesPerIteration;
 
-  @Parameter(names = "--output", required=true,
+  @Parameter(names = "--output-file", required=true,
       description = "A local file to write the sketch output to (as Avro MLWeightedCenters records)")
   private String outputFile;
   
@@ -70,7 +70,7 @@ public class KMeansSketchCommand implements Command {
   
   @Override
   public int execute(Configuration conf) throws Exception {
-    Pipeline p = pipelineParams.create(KMeansCommand.class, conf);
+    Pipeline p = pipelineParams.create(KMeansSketchCommand.class, conf);
     PCollection<Vector> input = inputParams.getVectors(p);
     List<Vector> initial = getInitialVectors(p);
     

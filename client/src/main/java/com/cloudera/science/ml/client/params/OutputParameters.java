@@ -28,6 +28,7 @@ import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.mahout.math.Vector;
 
 import com.beust.jcommander.Parameter;
+import com.cloudera.science.ml.client.cmd.CommandException;
 import com.cloudera.science.ml.mahout.types.MLWritables;
 import com.cloudera.science.ml.parallel.types.MLAvros;
 
@@ -44,7 +45,7 @@ public class OutputParameters {
     } else if ("seq".equals(outputType)) {
       return MLWritables.vector();
     } else {
-      throw new IllegalArgumentException("Unsupported Vector output type: " + outputType);
+      throw new CommandException("Unsupported Vector output type: " + outputType);
     }
   }
   
@@ -75,7 +76,7 @@ public class OutputParameters {
       }
       target = At.sequenceFile(output, ptype);
     } else {
-      throw new IllegalArgumentException("Unknown output type: " + outputType);
+      throw new CommandException("Unknown output type: " + outputType);
     }
     collect.write(target, WriteMode.OVERWRITE);
   }
@@ -84,6 +85,6 @@ public class OutputParameters {
     String msg = String.format(
         "Could not convert type %s into %s format for output: %s",
         ptype.getTypeClass().getCanonicalName(), type, outputFile);
-    throw new IllegalStateException(msg);
+    throw new CommandException(msg);
   }
 }

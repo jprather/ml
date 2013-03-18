@@ -48,6 +48,10 @@ public class KMeansAssignmentCommand implements Command {
       description = "The path to write the output assignments to on the cluster")
   private String assignmentsPath;
   
+  @Parameter(names = "--output-type",
+      description = "The format of the output assignments: Either 'avro' or 'csv'")
+  private String assignmentsType = "avro";
+  
   @ParametersDelegate
   private InputParameters inputParams = new InputParameters();
   
@@ -59,13 +63,17 @@ public class KMeansAssignmentCommand implements Command {
   
   @Override
   public int execute(Configuration conf) throws Exception {
-    Pipeline p = pipelineParams.create(KMeansCommand.class, conf);
+    Pipeline p = pipelineParams.create(KMeansAssignmentCommand.class, conf);
     PCollection<Vector> input = inputParams.getVectors(p);
     List<MLCenters> centers = AvroIO.read(MLCenters.class, new File(centersFile));
     KMeansParallel kmp = new KMeansParallel(randomParams.getRandom());
     PCollection<MLClusterAssignment> assigned = kmp.computeClusterAssignments(input,
         Lists.transform(centers, VectorConvert.TO_CENTERS));
-    p.write(assigned, To.avroFile(assignmentsPath));
+    if ("avro".equals(assignmentsType)) {
+      p.write(assigned, To.avroFile(assignmentsPath));
+    } else {
+      //TODO: as text
+    }
     p.done();
     return 0;
   }

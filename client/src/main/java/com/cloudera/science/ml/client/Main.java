@@ -24,6 +24,7 @@ import org.apache.hadoop.util.ToolRunner;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.cloudera.science.ml.client.cmd.Command;
+import com.cloudera.science.ml.client.cmd.CommandException;
 import com.cloudera.science.ml.client.cmd.KMeansAssignmentCommand;
 import com.cloudera.science.ml.client.cmd.KMeansCommand;
 import com.cloudera.science.ml.client.cmd.KMeansSketchCommand;
@@ -74,7 +75,7 @@ public class Main extends Configured implements Tool {
     try {
       return cmd.execute(getConf());
     } catch (Exception e) {
-      if (e instanceof IllegalArgumentException) {
+      if (e instanceof CommandException) {
         System.err.println("Error: " + e.getMessage());
       } else {
         throw e;

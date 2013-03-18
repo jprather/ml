@@ -29,6 +29,7 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.vectors.VectorRecord;
 import com.cloudera.science.ml.core.vectors.Vectors;
 import com.cloudera.science.ml.parallel.summary.Summary;
 import com.cloudera.science.ml.parallel.summary.SummaryStats;
@@ -58,12 +59,13 @@ public class Normalizer implements Serializable {
     private Summary s = new Summary();
     private boolean sparse;
     private int idColumn = -1;
-    private Set<Integer> ignoredColumns = Sets.newHashSet();
     private Transform defaultTransform = Transform.NONE;
     private Map<Integer, Transform> transforms = Maps.newHashMap();
     
     public Builder summary(Summary s) {
-      this.s = s;
+      if (s != null) {
+        this.s = s;
+      }
       return this;
     }
     
@@ -87,31 +89,21 @@ public class Normalizer implements Serializable {
       return this;
     }
     
-    public Builder ignoredColumns(Integer... columnIds) {
-      return ignoreColumns(Arrays.asList(columnIds));
-    }
-    
-    public Builder ignoreColumns(Collection<Integer> ids) {
-      this.ignoredColumns.addAll(ids);
-      return this;
-    }
-    
     public Normalizer build() {
-      return new Normalizer(s, sparse, idColumn, ignoredColumns, defaultTransform,
-          transforms);
+      return new Normalizer(s, sparse, idColumn, defaultTransform, transforms);
     }
   }
   
   private Normalizer(Summary summary, boolean sparse, int idColumn,
-      Set<Integer> ignoredColumns, Transform defaultTransform,
-      Map<Integer, Transform> transforms) {
+      Transform defaultTransform, Map<Integer, Transform> transforms) {
     this.summary = summary;
     this.sparse = sparse;
     this.idColumn = idColumn;
-    this.ignoredColumns = ignoredColumns;
+    this.ignoredColumns = summary.getIgnoredColumns();
     this.defaultTransform = defaultTransform;
     this.transforms = transforms;
-    this.expansion = -ignoredColumns.size() + (idColumn >= 0 ? -1 :  0) + summary.getNetLevels();
+    this.expansion = -ignoredColumns.size() + summary.getNetLevels() -
+        (idColumn >= 0 && !ignoredColumns.contains(idColumn) ? 1 : 0);
   }
   
   public <V extends Vector> PCollection<V> apply(PCollection<Record> records, PType<V> ptype) {
@@ -126,7 +118,7 @@ public class Normalizer implements Serializable {
       for (int i = 0; i < record.getSpec().size(); i++) {
         if (idColumn != i && !ignoredColumns.contains(i)) {
           SummaryStats ss = summary.getStats(i);
-          if (ss == null) {
+          if (ss == null || ss.isEmpty()) {
             values[offset] = record.getAsDouble(i);
             offset++;
           } else if (ss.isNumeric()) {
@@ -140,7 +132,7 @@ public class Normalizer implements Serializable {
           } else {
             int index = ss.index(record.getAsString(i));
             if (index < 0) {
-              LOG.error(String.format("Unknown value encountered for field %d: '%s'",
+              LOG.warn(String.format("Unknown value encountered for field %d: '%s'",
                   i, record.getAsString(i)));
             } else {
               values[offset + index] = 1.0;
@@ -151,16 +143,19 @@ public class Normalizer implements Serializable {
       }
       
       Vector v = null;
-      if (sparse) {
-        //TODO Handle named vector?
+      if (record instanceof VectorRecord) {
+        v = ((VectorRecord) record).getVector().like();
+      } else if (sparse) {
         v = Vectors.sparse(values.length);
       } else {
         v = Vectors.dense(values.length);
       }
       v.assign(values);
+      
       if (idColumn >= 0) {
         v = new NamedVector(v, record.getAsString(idColumn));
       }
+      
       return (V) v;
     }
   }

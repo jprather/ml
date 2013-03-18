@@ -19,14 +19,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedMap;
 
 import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.core.records.BasicSpec;
 import com.cloudera.science.ml.core.records.DataType;
+import com.cloudera.science.ml.core.records.RecordSpec;
 import com.cloudera.science.ml.core.records.Spec;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  *
@@ -59,29 +64,25 @@ public class Summary implements Serializable {
   }
   
   public Spec getSpec() {
+    RecordSpec.Builder rsb = RecordSpec.builder();
     int maxId = stats.lastKey();
-    List<String> fields = Arrays.asList(new String[maxId + 1]);
     for (int i = 0; i <= maxId; i++) {
       SummaryStats ss = stats.get(i);
       if (ss != null) {
         String field = ss.getFieldName();
         if (field == null) {
-          fields.set(i, "c" + i);
+          field = "c" + i;
+        }
+        if (ss.isNumeric()) {
+          rsb.add(field, DataType.DOUBLE);
         } else {
-          fields.set(i, field);
+          rsb.add(field, DataType.STRING);
         }
       } else {
-        fields.set(i, "c" + i);
+        rsb.add("c" + i, DataType.STRING);
       }
     }
-    return new BasicSpec(DataType.STRING, fields);
-  }
-  
-  public Vector getRandom(Random r) {
-    if (r == null) {
-      r = new Random();
-    }
-    return null;
+    return rsb.build();
   }
   
   public Map<Integer, SummaryStats> getAllStats() {
@@ -96,6 +97,21 @@ public class Summary implements Serializable {
     return fieldCount;
   }
   
+  public Set<Integer> getIgnoredColumns() {
+    if (stats.isEmpty()) {
+      return ImmutableSet.of();
+    }
+    Set<Integer> ignored = Sets.newHashSet();
+    int maxId = stats.lastKey();
+    for (int i = 0; i <= maxId; i++) {
+      SummaryStats ss = stats.get(i);
+      if (ss == null || ss.isEmpty()) {
+        ignored.add(i);
+      }
+    }
+    return ignored;
+  }
+  
   public SummaryStats getStats(int field) {
     return stats.get(field);
   }
@@ -103,7 +119,9 @@ public class Summary implements Serializable {
   public int getNetLevels() {
     int netLevels = 0;
     for (SummaryStats ss : stats.values()) {
-      netLevels += ss.numLevels() - 1;
+      if (!ss.isEmpty()) {
+        netLevels += ss.numLevels() - 1;
+      }
     }
     return netLevels;
   }

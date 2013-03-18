@@ -19,6 +19,7 @@ import java.util.List;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mahout.math.Vector;
@@ -26,7 +27,6 @@ import org.apache.mahout.math.Vector;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.beust.jcommander.converters.CommaParameterSplitter;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.OutputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
@@ -37,18 +37,13 @@ import com.cloudera.science.ml.core.records.Spec;
 import com.cloudera.science.ml.parallel.normalize.Normalizer;
 import com.cloudera.science.ml.parallel.normalize.Transform;
 import com.cloudera.science.ml.parallel.summary.Summary;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 
 @Parameters(commandDescription = "Prepare input (CSV or Vectors) for k-means runs")
 public class NormalizeCommand implements Command {
 
-  @Parameter(names = "--ignore-columns",
-      description = "A CSV of ints/strings that specifies columns in the input to ignore (zero-indexed)",
-      splitter = CommaParameterSplitter.class)
-  List<String> ignoredColumns = Lists.newArrayList();
-  
   @Parameter(names = "--id-column",
-      description = "For CSV inputs, the column of the file that contains the name/id of the record")
+      description = "For CSV inputs, the name/index of the column of the file that contains the identifier for the record")
   private String idColumn = "-1";
   
   @Parameter(names = "--sparse",
@@ -59,17 +54,14 @@ public class NormalizeCommand implements Command {
       description = "The name of a local JSON file that contains the summary info to use for normalizing the data")
   private String summaryFile;
   
-  @Parameter(names = "--output", required = true,
-      description = "The name of the output file, which will overwrite any existing files with that name")
+  @Parameter(names = "--output-path", required = true,
+      description = "The name of the output path, which will overwrite any existing files with that name")
   private String outputFile;
   
   @Parameter(names = "--transform",
       description = "A transform to apply to the continuous columns: either NONE, Z, or LINEAR")
   private String transform = "NONE";
 
-  @ParametersDelegate
-  private PipelineParameters pipelineParams = new PipelineParameters();
-  
   @ParametersDelegate
   private InputParameters inputParams = new InputParameters();
 
@@ -86,7 +78,7 @@ public class NormalizeCommand implements Command {
   
   @Override
   public int execute(Configuration conf) throws Exception {
-    Pipeline p = pipelineParams.create(NormalizeCommand.class, conf);
+    Pipeline p = new MRPipeline(NormalizeCommand.class, conf);
     PCollection<Record> records = inputParams.getRecords(p);
 
     Summary summary = null;
@@ -100,7 +92,6 @@ public class NormalizeCommand implements Command {
         .summary(summary)
         .sparse(sparse)
         .defaultTransform(getDefaultTransform())
-        .ignoreColumns(Specs.getFieldIds(spec, ignoredColumns))
         .idColumn(Specs.getFieldId(spec, idColumn))
         .build();
     

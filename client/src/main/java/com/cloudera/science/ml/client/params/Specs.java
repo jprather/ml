@@ -16,19 +16,21 @@ package com.cloudera.science.ml.client.params;
 
 import java.util.List;
 
+import com.cloudera.science.ml.client.cmd.CommandException;
 import com.cloudera.science.ml.core.records.FieldSpec;
 import com.cloudera.science.ml.core.records.Spec;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-/**
- *
- */
 public class Specs {
   
   public static Integer getFieldId(Spec spec, String value) {
-    return getFieldIds(spec, ImmutableList.of(value)).get(0);
+    List<Integer> fieldIds = getFieldIds(spec, ImmutableList.of(value));
+    if (fieldIds.isEmpty()) {
+      throw new CommandException("Could not find field " + value + " in spec");
+    }
+    return fieldIds.get(0);
   }
   
   public static List<Integer> getFieldIds(Spec spec, List<String> values) {
