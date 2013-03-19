@@ -40,11 +40,11 @@ import com.google.common.collect.Lists;
 public class KMeansSketchCommand implements Command {
 
   @Parameter(names = "--init-vectors-path",
-      description = "The file that contains the vector(s) used for initializing k-means||")
+      description = "A path that contains the vector(s) used for initializing k-means||")
   private String initVectorsPath;
 
   @Parameter(names = "--cross-folds",
-      description = "The number of sketches to create via cross-")
+      description = "The number of sketches to create via cross-folds, which helps us choose a value of K")
   private int crossFolds = 2;
   
   @Parameter(names = "--iterations",
@@ -71,15 +71,24 @@ public class KMeansSketchCommand implements Command {
   @Override
   public int execute(Configuration conf) throws Exception {
     Pipeline p = pipelineParams.create(KMeansSketchCommand.class, conf);
+    List<Vector> initial = null;
+    if (initVectorsPath != null) {
+      initial = getInitialVectors(p);
+    }
+
     PCollection<Vector> input = inputParams.getVectors(p);
-    List<Vector> initial = getInitialVectors(p);
-    
+    if (initial == null || initial.isEmpty()) {
+      initial = Lists.newArrayList();
+      initial.add(input.materialize().iterator().next());
+    }
     KMeansParallel kmp = new KMeansParallel(randomParams.getRandom());
     Crossfold cf = new Crossfold(crossFolds);
     
     List<List<Weighted<Vector>>> wv = kmp.initialization(input,
         numIterations, samplesPerIteration, initial, cf);
     AvroIO.write(toWeightedCenters(wv), new File(outputFile));
+    p.done();
+    
     return 0;
   }
 

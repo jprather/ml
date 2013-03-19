@@ -15,21 +15,14 @@
 package com.cloudera.science.ml.parallel.summary;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 
-import org.apache.mahout.math.Vector;
-
-import com.cloudera.science.ml.core.records.BasicSpec;
 import com.cloudera.science.ml.core.records.DataType;
 import com.cloudera.science.ml.core.records.RecordSpec;
 import com.cloudera.science.ml.core.records.Spec;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

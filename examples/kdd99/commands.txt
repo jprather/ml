@@ -1,0 +1,17 @@
+
+# Summarize the kdd99 data set
+client/bin/ml summary --input-paths kddcup.data_10_percent_corrected --format text --header-file examples/kdd99/header.csv \
+  --summary-file examples/kdd99/s.json
+
+# Convert the dataset into avro-formatted vectors
+client/bin/ml normalize --input-paths kddcup.data_10_percent_corrected --format text --summary-file examples/kdd99/s.json \
+  --transform Z --output-path kdd99 --output-type avro --id-column category
+
+# Create a sketch w/500 points per iteration.
+client/bin/ml ksketch --input-paths kdd99 --format avro --points-per-iteration 500 --output-file wc.avro --seed 1729
+
+# Run kmeans clustering locally on the sketch.
+client/bin/ml kmeans --input-file wc.avro --output-file centers.avro --seed 19 --clusters 1,10,20,30,40,50 --best-of 2
+
+# Select one of the clusterings and use it to assign the points to clusters.
+client/bin/ml kassign --input-path kdd99 --format avro --centers-file centers.avro --center-ids 4 --output-path assigned

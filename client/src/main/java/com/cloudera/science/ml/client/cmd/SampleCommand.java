@@ -19,6 +19,7 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.lib.Sample;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.mahout.math.Vector;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -26,21 +27,22 @@ import com.beust.jcommander.ParametersDelegate;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.OutputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
+import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.parallel.sample.ReservoirSampling;
 
 @Parameters(commandDescription = "Samples from a dataset and writes the sampled data to HDFS or a local file")
 public class SampleCommand implements Command {
 
-  @Parameter(names = "--output",
-      description = "The name of a file to store the output samples in")
+  @Parameter(names = "--output-path",
+      description = "The location of the output samples on HDFS")
   private String sampleFile;
   
-  @Parameter(names = "--reservoir-sample-size",
-      description = "Samples N records uniformly from the input. Mutually exclusive with --sampling-prob")
+  @Parameter(names = "--size",
+      description = "Samples N records uniformly from the input (mutually exclusive with --prob)")
   private int sampleSize = 0;
   
-  @Parameter(names = "--sampling-prob",
-      description = "Sample each record in the input independently with the given probability. Mutually exclusive with --reservoir-sample-size.")
+  @Parameter(names = "--prob",
+      description = "Sample each record in the input independently with the given probability (mutually exclusive with --size)")
   private double samplingProbability = 0.0;
   
   @ParametersDelegate
@@ -55,11 +57,11 @@ public class SampleCommand implements Command {
   @Override
   public int execute(Configuration conf) throws Exception {
     Pipeline p = pipelineParams.create(SampleCommand.class, conf);
-    PCollection<?> elements = inputParams.getRaw(p);
+    PCollection<Record> elements = inputParams.getRecords(p);
     
-    PCollection<?> sample = null;
+    PCollection<Record> sample = null;
     if (sampleSize > 0 && samplingProbability > 0.0) {
-      throw new IllegalArgumentException("--reservoir-sampling-size and --sampling-prob are mutually exclusive options.");
+      throw new IllegalArgumentException("--size and --prob are mutually exclusive options.");
     } else if (sampleSize > 0) {
       sample = ReservoirSampling.sample(elements, sampleSize);
     } else if (samplingProbability > 0.0 && samplingProbability < 1.0) {
@@ -77,7 +79,7 @@ public class SampleCommand implements Command {
 
   @Override
   public String getDescription() {
-    return "Samples from a dataset and writes the sampled data to HDFS or a local file";
+    return "Samples from a dataset and writes the sampled data to HDFS";
   }
 
 }

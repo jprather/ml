@@ -20,7 +20,6 @@ import org.apache.mahout.math.Vector;
 
 import com.cloudera.science.ml.core.vectors.Centers;
 import com.cloudera.science.ml.core.vectors.Weighted;
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 /**
@@ -36,6 +35,8 @@ public class KMeansEvaluation {
   private List<Double> predictionStrengths;
   private List<Double> trainCosts;
   private List<Double> testCosts;
+  private List<Double> stablePoints;
+  private List<Double> stableClusters;
   
   public KMeansEvaluation(List<Centers> testCenters, List<Weighted<Vector>> testPoints,
       List<Centers> trainCenters) {
@@ -50,35 +51,37 @@ public class KMeansEvaluation {
   }
   
   public List<Double> getTestCenterCosts() {
-    return Lists.transform(testCosts, new Function<Double, Double>() {
-      @Override
-      public Double apply(Double input) {
-        return input / testCosts.get(0);
-      }
-    });
+    return testCosts;
   }
   
   public List<Double> getTrainCosts() {
-    return Lists.transform(trainCosts, new Function<Double, Double>() {
-      @Override
-      public Double apply(Double input) {
-        return input / trainCosts.get(0);
-      }
-    });
+    return trainCosts;
+  }
+  
+  public List<Double> getStableClusters() {
+    return stableClusters;
+  }
+  
+  public List<Double> getStablePoints() {
+    return stablePoints;
   }
   
   private void init() {
     predictionStrengths = Lists.newArrayListWithExpectedSize(testCenters.size());
     trainCosts = Lists.newArrayListWithExpectedSize(testCenters.size());
     testCosts = Lists.newArrayListWithExpectedSize(testCenters.size());
+    stableClusters = Lists.newArrayListWithExpectedSize(testCenters.size());
+    stablePoints = Lists.newArrayListWithExpectedSize(testCenters.size());
     
     for (int i = 0; i < testCenters.size(); i++) {
       Centers test = testCenters.get(i);
       Centers train = trainCenters.get(i);
       double trainCost = 0.0, testCost = 0.0;
       double[][] assignments = new double[test.size()][train.size()];
+      int totalPoints = 0;
       for (Weighted<Vector> wv : testPoints) {
         double wt = wv.weight();
+        totalPoints += wt;
         Vector v = wv.thing();
         int testId = test.indexOfClosest(v);
         testCost += wt * v.getDistanceSquared(test.get(testId));
@@ -90,6 +93,8 @@ public class KMeansEvaluation {
       testCosts.add(testCost);
       
       double minScore = Double.POSITIVE_INFINITY;
+      double points = 0;
+      double clusters = 0;
       for (double[] assignment : assignments) {
         double total = 0.0;
         double same = 0.0;
@@ -98,11 +103,18 @@ public class KMeansEvaluation {
           same += a * (a - 1);
         }
         double score = same / (total * (total - 1));
-        if (score < minScore) {
+        // Only consider clusters that contain a non-trivial number of obs
+        if (total > assignment.length && score < minScore) {
           minScore = score;
+        }
+        if (score > 0.8) { // stability threshold
+          clusters++;
+          points += total;
         }
       }
       predictionStrengths.add(minScore);
+      stableClusters.add(clusters / assignments.length);
+      stablePoints.add(points / totalPoints);
     }
   }
 }

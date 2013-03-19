@@ -37,11 +37,4 @@ protocol ML {
   record MLWeightedCenters {
     array<MLWeightedVector> centers;
   }
-
-  record MLClusterAssignment {
-    string id;
-    int clustering_id;
-    int closest_center_id;
-    double distance;
-  } 
 }

@@ -16,6 +16,7 @@ package com.cloudera.science.ml.client.cmd;
 
 import java.io.File;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mahout.math.Vector;
@@ -23,6 +24,8 @@ import org.apache.mahout.math.Vector;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
+import com.beust.jcommander.converters.CommaParameterSplitter;
+import com.beust.jcommander.converters.IntegerConverter;
 import com.cloudera.science.ml.avro.MLWeightedCenters;
 import com.cloudera.science.ml.client.params.RandomParameters;
 import com.cloudera.science.ml.client.util.AvroIO;
@@ -42,18 +45,15 @@ public class KMeansCommand implements Command {
       description = "The local Avro file that contains the sketches computed by the ksketch command")
   private String sketchFile;
 
-  @Parameter(names = "--min-clusters",
-      description = "The minimum number of clusters to create")
-  private int minClusters = 1;
+  @Parameter(names = "--clusters", required=true,
+      description = "A CSV containing the number of clusters to create from the sample",
+      splitter = CommaParameterSplitter.class,
+      converter = IntegerConverter.class)
+  private List<Integer> clusters = Lists.newArrayList();
   
-  @Parameter(names = "--max-clusters",
-      required=true,
-      description = "The maximum number of clusters to create")
-  private int maxClusters;
-  
-  @Parameter(names = "--cluster-increment",
-      description = "The step size from --min-clusters to --max-clusters")
-  private int clusterIncrementBy = 1;
+  @Parameter(names = "--best-of",
+      description = "Run this many iterations of k-means for each value of K")
+  private int bestOf = 5;
   
   @Parameter(names = "--init-strategy",
       description = "The k-means initialization strategy (PLUS_PLUS or RANDOM)")
@@ -104,11 +104,13 @@ public class KMeansCommand implements Command {
       List<Centers> trainCenters = getClusters(train, kmeans);
       List<Centers> testCenters = getClusters(test, kmeans);
       KMeansEvaluation eval = new KMeansEvaluation(testCenters, test, trainCenters);
-      System.out.println("Cluster,TestCost,TrainCost,PredictionStrength");
+      System.out.println(
+          "ID,NumClusters,TestCost,TrainCost,PredStrength,StableClusters,StablePoints");
       for (int i = 0; i < trainCenters.size(); i++) {
-        System.out.println(String.format("%d,%.4f,%.4f,%.4f",
-            trainCenters.get(i).size(), eval.getTestCenterCosts().get(i),
-            eval.getTrainCosts().get(i), eval.getPredictionStrengths().get(i)));
+        System.out.println(String.format("%d,%d,%.2f,%.2f,%.4f,%.2f,%.4f",
+            i, trainCenters.get(i).size(), eval.getTestCenterCosts().get(i),
+            eval.getTrainCosts().get(i), eval.getPredictionStrengths().get(i),
+            eval.getStableClusters().get(i), eval.getStablePoints().get(i)));
       }
     }
     
@@ -117,8 +119,12 @@ public class KMeansCommand implements Command {
   
   private List<Centers> getClusters(List<Weighted<Vector>> sketch, KMeans kmeans) {
     List<Centers> centers = Lists.newArrayList();
-    for (int nc = minClusters; nc <= maxClusters; nc += clusterIncrementBy) {
-      centers.add(kmeans.compute(sketch, nc, randomParams.getRandom()));
+    for (Integer nc : clusters) {
+      Random r = randomParams.getRandom();
+      int loops = nc == 1 ? 1 : bestOf;
+      for (int i = 0; i < loops; i++) {
+        centers.add(kmeans.compute(sketch, nc, r));
+      }
     }
     return centers;
   }

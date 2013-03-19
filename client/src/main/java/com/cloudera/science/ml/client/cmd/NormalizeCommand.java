@@ -14,8 +14,6 @@
  */
 package com.cloudera.science.ml.client.cmd;
 
-import java.util.List;
-
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
@@ -29,7 +27,6 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.OutputParameters;
-import com.cloudera.science.ml.client.params.PipelineParameters;
 import com.cloudera.science.ml.client.params.Specs;
 import com.cloudera.science.ml.client.params.SummaryParameters;
 import com.cloudera.science.ml.core.records.Record;
@@ -37,7 +34,6 @@ import com.cloudera.science.ml.core.records.Spec;
 import com.cloudera.science.ml.parallel.normalize.Normalizer;
 import com.cloudera.science.ml.parallel.normalize.Transform;
 import com.cloudera.science.ml.parallel.summary.Summary;
-import com.google.common.collect.ImmutableList;
 
 @Parameters(commandDescription = "Prepare input (CSV or Vectors) for k-means runs")
 public class NormalizeCommand implements Command {

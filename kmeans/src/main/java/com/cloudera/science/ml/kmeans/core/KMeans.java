@@ -124,8 +124,12 @@ public class KMeans {
       assignments.get(centers.indexOfClosest(weightedVec.thing())).add(weightedVec);
     }
     List<Vector> centroids = Lists.newArrayList();
-    for (List<Weighted<V>> assigned : assignments.values()) {
-      centroids.add(centroid(assigned));
+    for (Map.Entry<Integer, List<Weighted<V>>> e : assignments.entrySet()) {
+      if (e.getValue().size() > 0) {
+        centroids.add(centroid(e.getValue()));
+      } else {
+        centroids.add(centers.get(e.getKey())); // fix the no-op center
+      }
     }
     return new Centers(centroids);
   }

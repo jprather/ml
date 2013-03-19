@@ -14,30 +14,15 @@
  */
 package com.cloudera.science.ml.client.params;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileReader;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.mapred.FsInput;
 import org.apache.crunch.PCollection;
-import org.apache.crunch.PTable;
-import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroType;
-import org.apache.crunch.types.avro.Avros;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileAsBinaryInputFormat;
 import org.apache.mahout.math.Vector;
 
 import com.beust.jcommander.Parameter;
@@ -74,60 +59,6 @@ public class InputParameters {
   
   public String getDelimiter() {
     return delim;
-  }
-  
-  public PCollection<?> getRaw(final Pipeline pipeline) {
-    format = format.toLowerCase();
-    if ("text".equals(format)) {
-      return (PCollection<?>) fromInputs(new Function<String, PCollection<String>>() {
-        @Override
-        public PCollection<String> apply(String input) {
-          return pipeline.readTextFile(input);
-        }
-      });
-    } else if ("avro".equals(format)) {
-      Schema schema = getSchemaForInputs(pipeline.getConfiguration());
-      final AvroType<GenericData.Record> at = Avros.generics(schema);
-      return (PCollection<?>) fromInputs(new Function<String, PCollection<GenericData.Record>>() {
-        @Override
-        public PCollection<GenericData.Record> apply(String input) {
-          return pipeline.read(From.avroFile(input, at));
-        }
-      });
-    } else if ("seq".equals(format)) {
-      return (PCollection<?>) fromInputs(
-          new Function<String, PCollection<Pair<BytesWritable, BytesWritable>>>() {
-            @Override
-            public PTable<BytesWritable, BytesWritable> apply(String input) {
-              return pipeline.read(From.formattedFile(input,
-                  SequenceFileAsBinaryInputFormat.class,
-                  BytesWritable.class, BytesWritable.class));
-            }
-          });
-    } else {
-      throw new CommandException("Unknown format: " + format);
-    }
-  }
-  
-  private Schema getSchemaForInputs(Configuration conf) {
-    try {
-      Path base = new Path(inputPaths.get(0));
-      FileSystem fs = FileSystem.get(conf);
-      if (fs.isDirectory(base)) {
-        for (FileStatus fstat : fs.listStatus(base)) {
-          if (fstat.isFile()) {
-            base = fstat.getPath();
-            break;
-          }
-        }
-      }
-      FsInput fi = new FsInput(base, conf);
-      GenericDatumReader<Void> gdr = new GenericDatumReader<Void>();
-      DataFileReader<Void> reader = new DataFileReader<Void>(fi, gdr);
-      return reader.getSchema();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
   
   public PCollection<Vector> getVectorsFromPath(final Pipeline pipeline, String path) {
@@ -203,7 +134,7 @@ public class InputParameters {
   
   private <T> PCollection<T> from(List<String> paths, Function<String, PCollection<T>> f) {
     PCollection<T> ret = null;
-    for (PCollection<T> p : Lists.transform(inputPaths, f)) {
+    for (PCollection<T> p : Lists.transform(paths, f)) {
       if (ret == null) {
         ret = p;
       } else {

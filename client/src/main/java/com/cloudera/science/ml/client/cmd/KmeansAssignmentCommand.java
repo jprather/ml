@@ -20,20 +20,24 @@ import java.util.List;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.io.To;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mahout.math.Vector;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
+import com.beust.jcommander.converters.CommaParameterSplitter;
+import com.beust.jcommander.converters.IntegerConverter;
 import com.cloudera.science.ml.avro.MLCenters;
-import com.cloudera.science.ml.avro.MLClusterAssignment;
 import com.cloudera.science.ml.client.params.InputParameters;
 import com.cloudera.science.ml.client.params.PipelineParameters;
-import com.cloudera.science.ml.client.params.RandomParameters;
 import com.cloudera.science.ml.client.util.AvroIO;
+import com.cloudera.science.ml.core.records.Record;
 import com.cloudera.science.ml.core.vectors.VectorConvert;
 import com.cloudera.science.ml.kmeans.parallel.KMeansParallel;
+import com.cloudera.science.ml.parallel.types.MLRecords;
 import com.google.common.collect.Lists;
 
 @Parameters(commandDescription =
@@ -44,13 +48,19 @@ public class KMeansAssignmentCommand implements Command {
       description = "The local Avro file containing the centers to be applied")
   private String centersFile;
   
+  @Parameter(names = "--center-ids",
+      description = "A CSV containing the indices of the centers to use for the assignment",
+      splitter = CommaParameterSplitter.class,
+      converter = IntegerConverter.class)
+  private List<Integer> centerIds = Lists.newArrayList();
+  
   @Parameter(names = "--output-path", required=true,
-      description = "The path to write the output assignments to on the cluster")
+      description = "The path to write the CSV output to (format: id, clustering_id, center_id, distance)")
   private String assignmentsPath;
   
-  @Parameter(names = "--output-type",
-      description = "The format of the output assignments: Either 'avro' or 'csv'")
-  private String assignmentsType = "avro";
+  @Parameter(names = "--output-delim",
+      description = "The delimiter to use for the CSV assignment output")
+  private String outputDelim = ",";
   
   @ParametersDelegate
   private InputParameters inputParams = new InputParameters();
@@ -58,22 +68,25 @@ public class KMeansAssignmentCommand implements Command {
   @ParametersDelegate
   private PipelineParameters pipelineParams = new PipelineParameters();
   
-  @ParametersDelegate
-  private RandomParameters randomParams = new RandomParameters();
-  
   @Override
   public int execute(Configuration conf) throws Exception {
     Pipeline p = pipelineParams.create(KMeansAssignmentCommand.class, conf);
     PCollection<Vector> input = inputParams.getVectors(p);
     List<MLCenters> centers = AvroIO.read(MLCenters.class, new File(centersFile));
-    KMeansParallel kmp = new KMeansParallel(randomParams.getRandom());
-    PCollection<MLClusterAssignment> assigned = kmp.computeClusterAssignments(input,
-        Lists.transform(centers, VectorConvert.TO_CENTERS));
-    if ("avro".equals(assignmentsType)) {
-      p.write(assigned, To.avroFile(assignmentsPath));
-    } else {
-      //TODO: as text
+    if (!centerIds.isEmpty()) {
+      List<MLCenters> filter = Lists.newArrayListWithExpectedSize(centerIds.size());
+      for (int i = 0; i < centerIds.size(); i++) {
+        filter.add(centers.get(centerIds.get(i)));
+      }
+      centers = filter;
     }
+    KMeansParallel kmp = new KMeansParallel();
+
+    PType<Record> recordType = MLRecords.csvRecord(WritableTypeFamily.getInstance(),
+        outputDelim);
+    PCollection<Record> assigned = kmp.computeClusterAssignments(input,
+        Lists.transform(centers, VectorConvert.TO_CENTERS), recordType);
+    p.write(assigned, To.textFile(assignmentsPath));
     p.done();
     return 0;
   }

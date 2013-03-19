@@ -33,11 +33,13 @@ import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
-import org.apache.crunch.types.avro.Avros;
 import org.apache.mahout.math.Vector;
 
-import com.cloudera.science.ml.avro.MLClusterAssignment;
 import com.cloudera.science.ml.avro.MLVector;
+import com.cloudera.science.ml.core.records.Record;
+import com.cloudera.science.ml.core.records.RecordSpec;
+import com.cloudera.science.ml.core.records.SimpleRecord;
+import com.cloudera.science.ml.core.records.Spec;
 import com.cloudera.science.ml.core.vectors.Centers;
 import com.cloudera.science.ml.core.vectors.VectorConvert;
 import com.cloudera.science.ml.core.vectors.Vectors;
@@ -61,6 +63,13 @@ import com.google.common.collect.Lists;
  */
 public class KMeansParallel {
 
+  public static final Spec ASSIGNMENT_SPEC = RecordSpec.builder()
+      .addString("vector_id")
+      .addInt("cluster_id")
+      .addInt("closest_center_id")
+      .addDouble("distance")
+      .build();
+  
   private final Random random;
     
   public KMeansParallel() {
@@ -111,13 +120,13 @@ public class KMeansParallel {
    * 
    * @param vecs The named vectors, with the name used as a unique identifier
    * @param centers The centers
-   * @return A {@code PCollection<MLClusterAssignment> containing the cluster assignment info for each point
+   * @return A {@code PCollection<Record> containing the cluster assignment info for each point
    */
-  public <V extends Vector> PCollection<MLClusterAssignment> computeClusterAssignments(
-      PCollection<V> vecs, List<Centers> centers) {
+  public <V extends Vector> PCollection<Record> computeClusterAssignments(
+      PCollection<V> vecs, List<Centers> centers, PType<Record> recordType) {
     CentersIndex index = new CentersIndex(centers);
     return vecs.parallelDo("assignments", new AssignedCenterFn<V>(index),
-        Avros.specifics(MLClusterAssignment.class));
+        recordType);
   }
   
   /**
@@ -234,7 +243,7 @@ public class KMeansParallel {
     }
   }
   
-  private static class AssignedCenterFn<V extends Vector> extends DoFn<V, MLClusterAssignment> {
+  private static class AssignedCenterFn<V extends Vector> extends DoFn<V, Record> {
     private final CentersIndex centers;
     
     public AssignedCenterFn(CentersIndex centers) {
@@ -242,16 +251,16 @@ public class KMeansParallel {
     }
 
     @Override
-    public void process(V vec, Emitter<MLClusterAssignment> emitter) {
+    public void process(V vec, Emitter<Record> emitter) {
       MLVector mlvec = VectorConvert.fromVector(vec);
       Distances d = centers.getDistances(vec);
       for (int i = 0; i < d.closestPoints.length; i++) {
-        emitter.emit(MLClusterAssignment.newBuilder()
-            .setId(mlvec.getId())
-            .setClusteringId(i)
-            .setClosestCenterId(d.closestPoints[i])
-            .setDistance(d.clusterDistances[i])
-            .build());
+        Record r = new SimpleRecord(ASSIGNMENT_SPEC);
+        r.set("vector_id", mlvec.getId().toString())
+         .set("cluster_id", i)
+         .set("closest_center_id", d.closestPoints[i])
+         .set("distance", d.clusterDistances[i]);
+       emitter.emit(r);
       }
     }
 
