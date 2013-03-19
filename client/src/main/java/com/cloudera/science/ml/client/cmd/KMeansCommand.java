@@ -67,7 +67,7 @@ public class KMeansCommand implements Command {
       description = "Stop the Lloyd's iterations if the delta between centers falls below this")
   private double stoppingThreshold = 1e-4;  
 
-  @Parameter(names = "--output-file",
+  @Parameter(names = "--centers-file",
       description = "A local file to store the centers that were created into")
   private String centersOutputFile;
   
